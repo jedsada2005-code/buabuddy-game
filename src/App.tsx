@@ -225,6 +225,15 @@ const INVESTMENT_PATHS: Record<InvestmentPath, InvestmentPathInfo> = {
   'esg-hero':       { icon: '🌿', imageUrl: ESG_HERO_IMG, name: 'ESG Hero',         style: 'เลือกลงทุนโดยคำนึงถึงสิ่งแวดล้อม สังคม และธรรมาภิบาล', strength: 'เชื่อมเป้าหมายการเงินเข้ากับผลกระทบที่ดี', badgeId: 'esg-hero-badge' },
 };
 
+const INVESTMENT_PATH_MASTERS: Record<InvestmentPath, { masterName: string; theme: string }> = {
+  'value-hunter': { masterName: 'Value Master', theme: 'เชี่ยวชาญการประเมินมูลค่าและเลือกหุ้นคุณภาพในราคาสมเหตุสมผล' },
+  'global-explorer': { masterName: 'Global Master', theme: 'เชี่ยวชาญการมองภาพโลกและกระจายพอร์ตข้ามประเทศ' },
+  'risk-guardian': { masterName: 'Risk Master', theme: 'เชี่ยวชาญการคุมความเสี่ยง วินัย และการปกป้องพอร์ต' },
+  'dividend-keeper': { masterName: 'Dividend Master', theme: 'เชี่ยวชาญหุ้น/สินทรัพย์ที่สร้างกระแสเงินสดสม่ำเสมอ' },
+  'bua-trader': { masterName: 'Trading Master', theme: 'เชี่ยวชาญจังหวะตลาด แผนซื้อขาย และการจำกัดความเสี่ยง' },
+  'esg-hero': { masterName: 'ESG Master', theme: 'เชี่ยวชาญการลงทุนยั่งยืนและผลกระทบเชิงบวก' },
+};
+
 // ============================================================
 // STATIC DATA (Quests, News, Shop, etc.)
 // ============================================================
@@ -1809,6 +1818,53 @@ export default function App() {
   // ============================================================
   const ProfileScreen = () => {
     const earned = BADGES.filter(b => player.earnedBadgeIds.includes(b.id));
+    const CoreNode = ({ label, sub, reached }: { label: string; sub: string; reached: boolean }) => (
+      <div className={`relative rounded-2xl p-3 border ${reached ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-100 opacity-60'}`}>
+        <div className="flex items-center gap-2">
+          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold ${reached ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
+            {reached ? '✓' : '•'}
+          </div>
+          <div className="flex-1">
+            <div className="font-black text-gray-800 text-sm">{label}</div>
+            <div className="text-[10px] text-gray-500">{sub}</div>
+          </div>
+        </div>
+      </div>
+    );
+    const PathMasterCard = ({ id, path }: { id: InvestmentPath; path: InvestmentPathInfo }) => {
+      const selected = player.selectedInvestmentPath === id;
+      const master = INVESTMENT_PATH_MASTERS[id];
+      const pathUnlocked = player.level >= 20;
+      const pathMasterReached = selected && player.level >= 35;
+      return (
+        <div className={`rounded-2xl p-3 border transition ${selected ? 'bg-gradient-to-r from-orange-50 to-pink-50 border-orange-300 shadow-sm' : pathUnlocked ? 'bg-white border-gray-100' : 'bg-gray-50 border-gray-100 opacity-60'}`}>
+          <div className="flex items-start gap-2">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${selected ? 'bg-white shadow-sm' : 'bg-gray-50'}`}>
+              {path.imageUrl ? <img src={path.imageUrl} alt={path.name} className="w-full h-full object-contain"/> : <span className="text-xl">{path.icon}</span>}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <div className="font-bold text-gray-800 text-xs">{path.name}</div>
+                <span className="text-gray-300">→</span>
+                <div className={`font-black text-xs ${pathMasterReached ? 'text-orange-600' : 'text-gray-700'}`}>{master.masterName}</div>
+              </div>
+              <div className="text-[10px] text-gray-500 leading-snug mt-0.5">{master.theme}</div>
+              <div className="mt-2">
+                {pathMasterReached ? (
+                  <span className="text-[10px] bg-orange-100 text-orange-700 font-bold px-2 py-0.5 rounded-full">Master สำเร็จ</span>
+                ) : selected ? (
+                  <span className="text-[10px] bg-blue-100 text-blue-600 font-bold px-2 py-0.5 rounded-full">กำลังพัฒนา</span>
+                ) : pathUnlocked ? (
+                  <span className="text-[10px] bg-gray-100 text-gray-500 font-bold px-2 py-0.5 rounded-full">ยังไม่ได้เลือก</span>
+                ) : (
+                  <span className="text-[10px] bg-gray-100 text-gray-400 font-bold px-2 py-0.5 rounded-full">ล็อก</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
     return (
       <div className="pb-24 px-4 pt-4 bg-gradient-to-b from-sky-50 to-white min-h-screen">
         <div className="font-bold text-xl text-gray-800 mb-4">โปรไฟล์</div>
@@ -1848,6 +1904,49 @@ export default function App() {
             )}
           </div>
         )}
+        {/* Master evolution tree */}
+        <div className="bg-white rounded-2xl p-4 shadow-sm mb-3">
+          <div className="font-bold text-gray-800 text-sm mb-1 flex items-center gap-1.5"><Trophy size={14} className="text-orange-500"/> Evolution Tree</div>
+          <div className="text-xs text-gray-500 mb-4">เส้นทางการเติบโตจากน้องบัวเริ่มต้น ไปจนถึง Investment Master</div>
+
+          <div className="space-y-2">
+            <CoreNode label="Bua Seed" sub="Lv.1+ เริ่มรู้จักหุ้นและพื้นฐานการลงทุน" reached={player.level >= 1}/>
+            <div className="ml-5 h-4 border-l-2 border-blue-100"/>
+            <CoreNode label="Bua Saver" sub="Lv.5+ เข้าใจการออม เงินสำรอง และวินัยก่อนลงทุน" reached={player.level >= 5}/>
+            <div className="ml-5 h-4 border-l-2 border-blue-100"/>
+            <CoreNode label="Bua Investor" sub="Lv.10+ เริ่มสร้างพอร์ตจำลองและเข้าใจ Risk & Return" reached={player.level >= 10}/>
+            <div className="ml-5 h-4 border-l-2 border-blue-100"/>
+            <CoreNode label="Investment Paths" sub="Lv.20+ เลือกสายเฉพาะทางของน้องบัว" reached={player.level >= 20}/>
+          </div>
+
+          <div className="mt-4 pl-3 border-l-2 border-orange-100 space-y-2">
+            {(Object.entries(INVESTMENT_PATHS) as [InvestmentPath, InvestmentPathInfo][]).map(([id, path]) => (
+              <PathMasterCard key={id} id={id} path={path}/>
+            ))}
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 gap-2">
+            <div className={`rounded-2xl p-3 border ${player.level >= 50 ? 'bg-purple-50 border-purple-200' : 'bg-gray-50 border-gray-100 opacity-70'}`}>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center">🏅</div>
+                <div className="flex-1">
+                  <div className="font-black text-gray-800 text-sm">All Masters Completed</div>
+                  <div className="text-[10px] text-gray-500">เป้าหมายระยะยาว: สะสมความเชี่ยวชาญครบทุกสาย</div>
+                </div>
+              </div>
+            </div>
+            <div className={`rounded-2xl p-3 border ${evoStage === 'investment-master' ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-300 shadow-sm' : 'bg-gray-50 border-gray-100 opacity-70'}`}>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center">👑</div>
+                <div className="flex-1">
+                  <div className="font-black text-gray-800 text-sm">Investment Master</div>
+                  <div className="text-[10px] text-gray-500">ปลายทางสูงสุดของน้องบัว: เข้าใจพอร์ต กลยุทธ์ และวินัยการลงทุน</div>
+                </div>
+                {evoStage === 'investment-master' && <CheckCircle size={16} className="text-yellow-600"/>}
+              </div>
+            </div>
+          </div>
+        </div>
         {/* Evolution stages */}
         <div className="bg-white rounded-2xl p-4 shadow-sm mb-3">
           <div className="font-bold text-gray-800 text-sm mb-3 flex items-center gap-1.5"><Star size={14} className="text-yellow-500"/> วิวัฒนาการ</div>
