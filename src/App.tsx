@@ -1031,19 +1031,20 @@ export default function App() {
   };
 
   // ============================================================
-  // DEV PANEL (DEV only)
+  // DEV PANEL
   // ============================================================
   const DevPanel = () => {
-    if (!import.meta.env.DEV && !showDev) return null;
     return (
       <div className="fixed bottom-20 right-2 z-[80] bg-gray-900 text-white rounded-2xl p-3 w-52 shadow-2xl text-xs">
         <div className="font-bold text-yellow-400 mb-2 flex items-center gap-1"><Settings size={12}/> Dev Panel</div>
         <button onClick={() => gainExp(100)} className="w-full mb-1 bg-blue-600 rounded-lg py-1 active:scale-95">+100 EXP</button>
         <button onClick={() => gainExp(500)} className="w-full mb-1 bg-blue-700 rounded-lg py-1 active:scale-95">+500 EXP</button>
+        <button onClick={() => setPlayer(p => ({ ...p, coins: p.coins + 1000 }))} className="w-full mb-1 bg-yellow-600 rounded-lg py-1 active:scale-95">+1,000 Bua Coin</button>
         <button onClick={() => setPlayer(p => ({ ...p, level: p.level + 5, currentExp: 0, currentEvolutionStage: getEvolutionStage(p.level + 1) }))} className="w-full mb-1 bg-green-600 rounded-lg py-1 active:scale-95">+5 Level</button>
         <button onClick={() => setPlayer(p => ({ ...p, level: 10, currentExp: 0, currentEvolutionStage: getEvolutionStage(10), unlockedFeatureIds: [...p.unlockedFeatureIds, 'portfolio', 'money-quests'] }))} className="w-full mb-1 bg-purple-600 rounded-lg py-1 active:scale-95">Set Lv.10 + Unlock Portfolio</button>
         <button onClick={() => { setPlayer(p => ({ ...p, level: 20, currentExp: 0, currentEvolutionStage: getEvolutionStage(20), unlockedFeatureIds: [...FEATURE_UNLOCKS.map(f => f.id)] })); setShowPathModal(true); }} className="w-full mb-1 bg-orange-600 rounded-lg py-1 active:scale-95">Set Lv.20 + Path</button>
         <button onClick={() => setPlayer(p => ({ ...p, completedQuestIds: [...new Set([...p.completedQuestIds, ...MONEY_QUEST_IDS])] }))} className="w-full mb-1 bg-teal-600 rounded-lg py-1 active:scale-95">Complete Money Quests</button>
+        <button onClick={() => setPlayer(p => ({ ...p, completedLessonIds: [...new Set([...p.completedLessonIds, ...STOCK101_LESSONS.map(l => l.id)])], earnedBadgeIds: [...new Set([...p.earnedBadgeIds, STOCK101_CHAPTER_BONUS.badgeId])] }))} className="w-full mb-1 bg-indigo-600 rounded-lg py-1 active:scale-95">Complete Stock 101</button>
         <button onClick={() => { localStorage.removeItem(STORAGE_KEY); window.location.reload(); }} className="w-full bg-red-700 rounded-lg py-1 active:scale-95 flex items-center justify-center gap-1"><RotateCcw size={10}/> Reset All</button>
       </div>
     );
@@ -2292,13 +2293,11 @@ export default function App() {
           </div>
         )}
 
-        {/* Dev Panel toggle (DEV only) */}
-        {import.meta.env.DEV && (
-          <button onClick={() => setShowDev(d => !d)}
-            className="fixed top-4 right-4 z-[90] bg-gray-900 text-yellow-400 rounded-full w-8 h-8 flex items-center justify-center shadow-lg text-xs font-bold">
-            {showDev ? '✕' : '⚙'}
-          </button>
-        )}
+        {/* Dev Panel toggle */}
+        <button onClick={() => setShowDev(d => !d)}
+          className="fixed top-4 right-4 z-[90] bg-gray-900 text-yellow-400 rounded-full w-9 h-9 flex items-center justify-center shadow-lg text-xs font-bold border border-yellow-500/40">
+          {showDev ? '✕' : '⚙'}
+        </button>
         {showDev && <DevPanel/>}
       </div>
     </div>
