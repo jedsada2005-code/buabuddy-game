@@ -23,8 +23,20 @@ const RISK_GUARDIAN_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bu
 const DIVIDEND_KEEPER_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/dividend%20keeper.png';
 const BUA_TRADER_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/bua%20trader.png';
 const ESG_HERO_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/esg%20hero.png';
+const VALUE_MASTER_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/Value%20Master.png';
+const GLOBAL_MASTER_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/Global%20Master.png';
+const GUARDIAN_MASTER_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/Gardian%20Master.png';
+const DIVIDEND_MASTER_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/Dividend%20Master.png';
+const ESG_MASTER_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/ESG%20Master.png';
+const TRADING_MASTER_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/Trading%20Master%20(1).png';
 const INVESTMENT_MASTER_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/investment%20master.png';
 const BG_IMG  = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/background.png';
+const BG_VALUE_MASTER_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/BG_Value%20.png';
+const BG_GLOBAL_MASTER_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/BG%20Global%20Master.png';
+const BG_GUARDIAN_MASTER_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/BG%20Risk%20Gardian.png';
+const BG_DIVIDEND_MASTER_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/BG%20dividend%20master.png';
+const BG_ESG_MASTER_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/BG%20esg%20master.png';
+const BG_TRADING_MASTER_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/BG%20trading%20Master.png';
 const BG_MASTER_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/BG%20master.png';
 
 // ============================================================
@@ -155,7 +167,7 @@ const PHASE_INFO: Record<LearningPhase, { name: string; color: string; next: str
   'money-management':  { name: '💰 จัดการเงิน',            color: 'green',  next: 'ปลดล็อกพอร์ตจำลอง',   nextLevel: 10 },
   'investment-basics': { name: '📈 พื้นฐานการลงทุน',       color: 'blue',   next: 'ลงทุนตามเป้าหมาย',    nextLevel: 16 },
   'goal-based':        { name: '🎯 ลงทุนตามเป้าหมาย',      color: 'purple', next: 'เลือกเส้นทางลงทุน',   nextLevel: 20 },
-  'specialization':    { name: '🏆 เส้นทางเฉพาะทาง',       color: 'orange', next: 'Investment Master',    nextLevel: 50 },
+  'specialization':    { name: '🏆 เส้นทางเฉพาะทาง',       color: 'orange', next: 'Path Master',          nextLevel: 50 },
 };
 
 const EVOLUTION_INFO: Record<EvolutionStage, { name: string; desc: string; minLevel: number }> = {
@@ -163,7 +175,7 @@ const EVOLUTION_INFO: Record<EvolutionStage, { name: string; desc: string; minLe
   'bua-saver':       { name: 'Bua Saver',        desc: 'นักออมที่ดี',                  minLevel: 5  },
   'bua-investor':    { name: 'Bua Investor',     desc: 'เริ่มลงทุนอย่างฉลาด',         minLevel: 10 },
   'specialized-bua': { name: 'Specialized Bua', desc: 'เชี่ยวชาญเส้นทางเฉพาะ',       minLevel: 20 },
-  'investment-master':{ name: 'Investment Master', desc: 'ปรมาจารย์การลงทุน',         minLevel: 50 },
+  'investment-master':{ name: 'Investment Master', desc: 'ปรมาจารย์การลงทุนที่ผ่าน Master ครบทุกสาย', minLevel: 50 },
 };
 
 // ============================================================
@@ -211,6 +223,13 @@ const BADGES = [
   { id: 'dividend-keeper-badge', icon: '💎', name: 'Dividend Keeper', desc: 'เลือกเส้นทางผู้ดูแลปันผล'             },
   { id: 'bua-trader-badge', icon: '⚡', name: 'Bua Trader',          desc: 'เลือกเส้นทางนักเทรดจำลอง'              },
   { id: 'esg-hero-badge',   icon: '🌿', name: 'ESG Hero',            desc: 'เลือกเส้นทางลงทุนยั่งยืน'              },
+  { id: 'value-master-badge', icon: '🏆', name: 'Value Master',       desc: 'เป็นมาสเตอร์สาย Value Hunter'          },
+  { id: 'global-master-badge', icon: '🏆', name: 'Global Master',     desc: 'เป็นมาสเตอร์สาย Global Explorer'       },
+  { id: 'risk-master-badge', icon: '🏆', name: 'Risk Master',         desc: 'เป็นมาสเตอร์สาย Risk Guardian'         },
+  { id: 'dividend-master-badge', icon: '🏆', name: 'Dividend Master', desc: 'เป็นมาสเตอร์สาย Dividend Keeper'       },
+  { id: 'trading-master-badge', icon: '🏆', name: 'Trading Master',   desc: 'เป็นมาสเตอร์สาย Bua Trader'            },
+  { id: 'esg-master-badge', icon: '🏆', name: 'ESG Master',           desc: 'เป็นมาสเตอร์สาย ESG Hero'              },
+  { id: 'investment-master-badge', icon: '👑', name: 'Investment Master', desc: 'ได้รับ Badge Master ครบทุกสาย'       },
   { id: 'trader',          icon: '📈', name: 'นักเทรด',              desc: 'ซื้อขาย 5 ครั้ง'                       },
   { id: 'stock101-master', icon: '📘', name: 'Stock 101',             desc: 'เรียนบทพื้นฐานหุ้น 101 ครบทุกคลิป'      },
   { id: 'friend',          icon: '❤️', name: 'เพื่อนรัก',           desc: 'ให้อาหาร 5 ครั้ง'                      },
@@ -225,14 +244,39 @@ const INVESTMENT_PATHS: Record<InvestmentPath, InvestmentPathInfo> = {
   'esg-hero':       { icon: '🌿', imageUrl: ESG_HERO_IMG, name: 'ESG Hero',         style: 'เลือกลงทุนโดยคำนึงถึงสิ่งแวดล้อม สังคม และธรรมาภิบาล', strength: 'เชื่อมเป้าหมายการเงินเข้ากับผลกระทบที่ดี', badgeId: 'esg-hero-badge' },
 };
 
-const INVESTMENT_PATH_MASTERS: Record<InvestmentPath, { masterName: string; theme: string }> = {
-  'value-hunter': { masterName: 'Value Master', theme: 'เชี่ยวชาญการประเมินมูลค่าและเลือกหุ้นคุณภาพในราคาสมเหตุสมผล' },
-  'global-explorer': { masterName: 'Global Master', theme: 'เชี่ยวชาญการมองภาพโลกและกระจายพอร์ตข้ามประเทศ' },
-  'risk-guardian': { masterName: 'Risk Master', theme: 'เชี่ยวชาญการคุมความเสี่ยง วินัย และการปกป้องพอร์ต' },
-  'dividend-keeper': { masterName: 'Dividend Master', theme: 'เชี่ยวชาญหุ้น/สินทรัพย์ที่สร้างกระแสเงินสดสม่ำเสมอ' },
-  'bua-trader': { masterName: 'Trading Master', theme: 'เชี่ยวชาญจังหวะตลาด แผนซื้อขาย และการจำกัดความเสี่ยง' },
-  'esg-hero': { masterName: 'ESG Master', theme: 'เชี่ยวชาญการลงทุนยั่งยืนและผลกระทบเชิงบวก' },
+const INVESTMENT_PATH_MASTERS: Record<InvestmentPath, { masterName: string; theme: string; badgeId: string }> = {
+  'value-hunter': { masterName: 'Value Master', theme: 'เชี่ยวชาญการประเมินมูลค่าและเลือกหุ้นคุณภาพในราคาสมเหตุสมผล', badgeId: 'value-master-badge' },
+  'global-explorer': { masterName: 'Global Master', theme: 'เชี่ยวชาญการมองภาพโลกและกระจายพอร์ตข้ามประเทศ', badgeId: 'global-master-badge' },
+  'risk-guardian': { masterName: 'Risk Master', theme: 'เชี่ยวชาญการคุมความเสี่ยง วินัย และการปกป้องพอร์ต', badgeId: 'risk-master-badge' },
+  'dividend-keeper': { masterName: 'Dividend Master', theme: 'เชี่ยวชาญหุ้น/สินทรัพย์ที่สร้างกระแสเงินสดสม่ำเสมอ', badgeId: 'dividend-master-badge' },
+  'bua-trader': { masterName: 'Trading Master', theme: 'เชี่ยวชาญจังหวะตลาด แผนซื้อขาย และการจำกัดความเสี่ยง', badgeId: 'trading-master-badge' },
+  'esg-hero': { masterName: 'ESG Master', theme: 'เชี่ยวชาญการลงทุนยั่งยืนและผลกระทบเชิงบวก', badgeId: 'esg-master-badge' },
 };
+
+const PATH_MASTER_BADGE_IDS = (Object.values(INVESTMENT_PATH_MASTERS).map(master => master.badgeId));
+const INVESTMENT_MASTER_BADGE_ID = 'investment-master-badge';
+
+function hasAllPathMasterBadges(earnedBadgeIds: string[]): boolean {
+  return PATH_MASTER_BADGE_IDS.every(id => earnedBadgeIds.includes(id));
+}
+
+function getPlayerEvolutionStage(player: Pick<PlayerProgress, 'level' | 'earnedBadgeIds'>): EvolutionStage {
+  if (player.level >= 50 && hasAllPathMasterBadges(player.earnedBadgeIds)) return 'investment-master';
+  if (player.level >= 20) return 'specialized-bua';
+  return getEvolutionStage(player.level);
+}
+
+function getBadgeIdsForLevelAndPath(level: number, selectedInvestmentPath: InvestmentPath | undefined, currentBadgeIds: string[]): string[] {
+  const nextBadgeIds = [...currentBadgeIds];
+  if (level >= 50 && selectedInvestmentPath) {
+    const pathMasterBadgeId = INVESTMENT_PATH_MASTERS[selectedInvestmentPath].badgeId;
+    if (!nextBadgeIds.includes(pathMasterBadgeId)) nextBadgeIds.push(pathMasterBadgeId);
+  }
+  if (level >= 50 && hasAllPathMasterBadges(nextBadgeIds) && !nextBadgeIds.includes(INVESTMENT_MASTER_BADGE_ID)) {
+    nextBadgeIds.push(INVESTMENT_MASTER_BADGE_ID);
+  }
+  return nextBadgeIds;
+}
 
 // ============================================================
 // STATIC DATA (Quests, News, Shop, etc.)
@@ -599,13 +643,14 @@ const BuaCoinIcon = ({ size = 16, className = '' }: { size?: number; className?:
   </span>
 );
 
-const BuaMascot = ({ size = 180, mood = 'happy', stage = 1, evolutionStage, investmentPath }: { size?: number; mood?: string; stage?: number; evolutionStage?: EvolutionStage; investmentPath?: InvestmentPath }) => {
+const BuaMascot = ({ size = 180, mood = 'happy', stage = 1, evolutionStage, investmentPath, imageOverride, imageScale = 1, imageOffsetX = 0, imageOffsetY = 0 }: { size?: number; mood?: string; stage?: number; evolutionStage?: EvolutionStage; investmentPath?: InvestmentPath; imageOverride?: string; imageScale?: number; imageOffsetX?: number; imageOffsetY?: number }) => {
   const pathImage = investmentPath ? INVESTMENT_PATHS[investmentPath]?.imageUrl : undefined;
-  const imageSrc = evolutionStage === 'investment-master' ? INVESTMENT_MASTER_IMG : pathImage ?? (evolutionStage === 'bua-seed' ? BUA_SEED_IMG : evolutionStage === 'bua-saver' ? BUA_SAVER_IMG : evolutionStage === 'bua-investor' ? BUA_INVESTOR_IMG : BUA_IMG);
+  const imageSrc = imageOverride ?? (evolutionStage === 'investment-master' ? INVESTMENT_MASTER_IMG : pathImage ?? (evolutionStage === 'bua-seed' ? BUA_SEED_IMG : evolutionStage === 'bua-saver' ? BUA_SAVER_IMG : evolutionStage === 'bua-investor' ? BUA_INVESTOR_IMG : BUA_IMG));
   return (
   <div style={{ width: size, height: size, position: 'relative', display: 'inline-block', background: 'transparent' }}>
     <img src={imageSrc} alt="Bua Buddy"
       style={{ width: '100%', height: '100%', objectFit: 'contain',
+        transform: `translate(${imageOffsetX}px, ${imageOffsetY}px) scale(${imageScale})`, transformOrigin: 'center bottom',
         filter: mood === 'sad' ? 'grayscale(40%) brightness(0.85)' : 'none', transition: 'filter 0.3s' }} />
     {mood === 'happy' && <>
       <div style={{ position: 'absolute', top: '10%', left:  '0%', fontSize: size * 0.11 }}>✨</div>
@@ -694,7 +739,7 @@ const PortfolioTutorialModal = ({ onClose }: { onClose: () => void }) => {
   );
 };
 
-const EvolutionModal = ({ stage, onClose }: { stage: EvolutionStage; onClose: () => void }) => {
+const EvolutionModal = ({ stage, onClose, imageOverride, imageScale, imageOffsetX, imageOffsetY, investmentPath }: { stage: EvolutionStage; onClose: () => void; imageOverride?: string; imageScale?: number; imageOffsetX?: number; imageOffsetY?: number; investmentPath?: InvestmentPath | null }) => {
   const info = EVOLUTION_INFO[stage];
   const stageVisual = stage === 'bua-investor' ? 3 : stage === 'specialized-bua' || stage === 'investment-master' ? 4 : stage === 'bua-saver' ? 2 : 1;
   return (
@@ -702,7 +747,7 @@ const EvolutionModal = ({ stage, onClose }: { stage: EvolutionStage; onClose: ()
       <div className="bg-white rounded-3xl w-full max-w-sm p-6 text-center shadow-2xl">
         <div className="text-5xl mb-2">✨</div>
         <div className="mx-auto mb-3 w-32 h-32 rounded-full bg-gradient-to-br from-blue-50 to-pink-50 border border-blue-100 flex items-center justify-center">
-          <BuaMascot size={120} mood="happy" stage={stageVisual} evolutionStage={stage}/>
+          <BuaMascot size={120} mood="happy" stage={stageVisual} evolutionStage={stage} investmentPath={investmentPath ?? undefined} imageOverride={imageOverride} imageScale={imageScale ?? 1} imageOffsetX={imageOffsetX ?? 0} imageOffsetY={imageOffsetY ?? 0}/>
         </div>
         <div className="text-xs font-bold text-blue-500 mb-1">วิวัฒนาการใหม่</div>
         <div className="font-black text-2xl text-gray-800 mb-1">{info.name}</div>
@@ -794,9 +839,73 @@ export default function App() {
   const phase         = getLearningPhase(player.level);
   const phaseInfo     = PHASE_INFO[phase];
   const nextUnlock    = getNextUnlock(player.level);
-  const evoStage      = getEvolutionStage(player.level);
-  const evoInfo       = EVOLUTION_INFO[evoStage];
-  const sceneBgImg    = evoStage === 'investment-master' ? BG_MASTER_IMG : BG_IMG;
+  const evoStage      = getPlayerEvolutionStage(player);
+  const selectedPathMasterInfo = player.selectedInvestmentPath ? INVESTMENT_PATH_MASTERS[player.selectedInvestmentPath] : null;
+  const selectedPathMasterReached = Boolean(
+    player.level >= 50 &&
+    player.selectedInvestmentPath &&
+    selectedPathMasterInfo &&
+    player.earnedBadgeIds.includes(selectedPathMasterInfo.badgeId)
+  );
+  const allPathMastersCompleted = hasAllPathMasterBadges(player.earnedBadgeIds);
+  const evoInfo       = selectedPathMasterReached && !allPathMastersCompleted && selectedPathMasterInfo
+    ? { name: selectedPathMasterInfo.masterName, desc: selectedPathMasterInfo.theme, minLevel: 50 }
+    : EVOLUTION_INFO[evoStage];
+  const selectedPathMasterAssets = selectedPathMasterReached && player.selectedInvestmentPath === 'value-hunter'
+    ? { mascot: VALUE_MASTER_IMG, background: BG_VALUE_MASTER_IMG }
+    : selectedPathMasterReached && player.selectedInvestmentPath === 'global-explorer'
+    ? { mascot: GLOBAL_MASTER_IMG, background: BG_GLOBAL_MASTER_IMG }
+    : selectedPathMasterReached && player.selectedInvestmentPath === 'risk-guardian'
+    ? { mascot: GUARDIAN_MASTER_IMG, background: BG_GUARDIAN_MASTER_IMG }
+    : selectedPathMasterReached && player.selectedInvestmentPath === 'dividend-keeper'
+    ? { mascot: DIVIDEND_MASTER_IMG, background: BG_DIVIDEND_MASTER_IMG }
+    : selectedPathMasterReached && player.selectedInvestmentPath === 'esg-hero'
+    ? { mascot: ESG_MASTER_IMG, background: BG_ESG_MASTER_IMG }
+    : selectedPathMasterReached && player.selectedInvestmentPath === 'bua-trader'
+    ? { mascot: TRADING_MASTER_IMG, background: BG_TRADING_MASTER_IMG }
+    : null;
+  const isInvestmentMaster = evoStage === 'investment-master';
+  const mascotImageOverride = isInvestmentMaster ? undefined : selectedPathMasterAssets?.mascot;
+  const mascotImageScale = isInvestmentMaster ? 1.0
+    : (selectedPathMasterAssets && player.selectedInvestmentPath === 'value-hunter') ? 2.40
+    : (selectedPathMasterAssets && player.selectedInvestmentPath === 'risk-guardian') ? 2.40
+    : (selectedPathMasterAssets && player.selectedInvestmentPath === 'dividend-keeper') ? 2.40
+    : (selectedPathMasterAssets && player.selectedInvestmentPath === 'bua-trader') ? 2.40
+    : selectedPathMasterAssets ? 2.15 : 1;
+  const mascotImageOffset = isInvestmentMaster
+    ? { x: 8, y: 0 }
+    : player.selectedInvestmentPath === 'value-hunter' && selectedPathMasterAssets
+    ? { x: 8, y: 100 }
+    : player.selectedInvestmentPath === 'global-explorer' && selectedPathMasterAssets
+    ? { x: -8, y: 100 }
+    : player.selectedInvestmentPath === 'risk-guardian' && selectedPathMasterAssets
+    ? { x: 8, y: 100 }
+    : player.selectedInvestmentPath === 'dividend-keeper' && selectedPathMasterAssets
+    ? { x: 8, y: 100 }
+    : player.selectedInvestmentPath === 'esg-hero' && selectedPathMasterAssets
+    ? { x: 8, y: 80 }
+    : player.selectedInvestmentPath === 'bua-trader' && selectedPathMasterAssets
+    ? { x: 8, y: 80 }
+    : selectedPathMasterAssets ? { x: 8, y: 60 } : { x: 0, y: 0 };
+  const profileMascotImageOffset = isInvestmentMaster
+    ? { x: 4, y: 0 }
+    : player.selectedInvestmentPath === 'global-explorer' && selectedPathMasterAssets
+    ? { x: 4, y: 35 }
+    : player.selectedInvestmentPath === 'risk-guardian' && selectedPathMasterAssets
+    ? { x: 4, y: 35 }
+    : player.selectedInvestmentPath === 'dividend-keeper' && selectedPathMasterAssets
+    ? { x: 4, y: 35 }
+    : player.selectedInvestmentPath === 'esg-hero' && selectedPathMasterAssets
+    ? { x: 4, y: 35 }
+    : player.selectedInvestmentPath === 'bua-trader' && selectedPathMasterAssets
+    ? { x: 4, y: 35 }
+    : selectedPathMasterAssets ? { x: 4, y: 25 } : { x: 0, y: 0 };
+  const modalMascotImageOffset = isInvestmentMaster
+    ? { x: 4, y: 0 }
+    : player.selectedInvestmentPath === 'value-hunter' && selectedPathMasterAssets
+    ? { x: -11, y: 200 }
+    : profileMascotImageOffset;
+  const sceneBgImg    = evoStage === 'investment-master' ? BG_MASTER_IMG : selectedPathMasterAssets?.background ?? BG_IMG;
   const selectedPathInfo = player.selectedInvestmentPath ? INVESTMENT_PATHS[player.selectedInvestmentPath] : null;
   const mood          = player.happy < 30 || player.energy < 30 ? 'sad' : 'happy';
   const mascotStage   = player.level >= 30 ? 4 : player.level >= 20 ? 3 : player.level >= 10 ? 2 : 1;
@@ -839,6 +948,20 @@ export default function App() {
     }
   }, [player.level, player.selectedInvestmentPath, pathPromptDismissed]);
 
+  useEffect(() => {
+    const nextBadgeIds = getBadgeIdsForLevelAndPath(player.level, player.selectedInvestmentPath, player.earnedBadgeIds);
+    const nextEvolutionStage = getPlayerEvolutionStage({ ...player, earnedBadgeIds: nextBadgeIds });
+    const badgeChanged = nextBadgeIds.length !== player.earnedBadgeIds.length;
+    const stageChanged = nextEvolutionStage !== player.currentEvolutionStage;
+    if (badgeChanged || stageChanged) {
+      setPlayer(p => ({
+        ...p,
+        earnedBadgeIds: nextBadgeIds,
+        currentEvolutionStage: nextEvolutionStage,
+      }));
+    }
+  }, [player.level, player.selectedInvestmentPath, player.earnedBadgeIds.join('|'), player.currentEvolutionStage]);
+
   // ============================================================
   // EXP / LEVEL UP
   // ============================================================
@@ -854,7 +977,8 @@ export default function App() {
         needed = getRequiredExp(level);
         leveled = true;
       }
-      const nextEvolutionStage = getEvolutionStage(level);
+      const nextBadgeIds = getBadgeIdsForLevelAndPath(level, p.selectedInvestmentPath, p.earnedBadgeIds);
+      const nextEvolutionStage = getPlayerEvolutionStage({ ...p, level, earnedBadgeIds: nextBadgeIds });
       // Check new features
       const newFeatures = FEATURE_UNLOCKS
         .filter(f => f.id !== 'portfolio' && f.requiredLevel <= level && !p.unlockedFeatureIds.includes(f.id))
@@ -864,6 +988,7 @@ export default function App() {
       if (nextEvolutionStage !== p.currentEvolutionStage) setEvolutionInfo(nextEvolutionStage);
       return {
         ...p, level, currentExp: exp, totalExp: p.totalExp + amount,
+        earnedBadgeIds: nextBadgeIds,
         unlockedFeatureIds: [...new Set([...p.unlockedFeatureIds, ...newFeatures])],
         currentEvolutionStage: nextEvolutionStage,
       };
@@ -872,13 +997,17 @@ export default function App() {
 
   const selectInvestmentPath = (path: InvestmentPath) => {
     const pathInfo = INVESTMENT_PATHS[path];
-    setPlayer(p => ({
-      ...p,
-      selectedInvestmentPath: path,
-      currentEvolutionStage: getEvolutionStage(Math.max(p.level, 20)),
-      unlockedFeatureIds: [...new Set([...p.unlockedFeatureIds, 'inv-path'])],
-      earnedBadgeIds: [...new Set([...p.earnedBadgeIds, 'path-chosen', pathInfo.badgeId])],
-    }));
+    setPlayer(p => {
+      const baseBadgeIds = [...new Set([...p.earnedBadgeIds, 'path-chosen', pathInfo.badgeId])];
+      const nextBadgeIds = getBadgeIdsForLevelAndPath(p.level, path, baseBadgeIds);
+      return {
+        ...p,
+        selectedInvestmentPath: path,
+        currentEvolutionStage: getPlayerEvolutionStage({ ...p, selectedInvestmentPath: path, earnedBadgeIds: nextBadgeIds }),
+        unlockedFeatureIds: [...new Set([...p.unlockedFeatureIds, 'inv-path'])],
+        earnedBadgeIds: nextBadgeIds,
+      };
+    });
     setShowPathModal(false);
     setPathPromptDismissed(false);
     setEvolutionInfo('specialized-bua');
@@ -1049,9 +1178,31 @@ export default function App() {
         <button onClick={() => gainExp(100)} className="w-full mb-1 bg-blue-600 rounded-lg py-1 active:scale-95">+100 EXP</button>
         <button onClick={() => gainExp(500)} className="w-full mb-1 bg-blue-700 rounded-lg py-1 active:scale-95">+500 EXP</button>
         <button onClick={() => setPlayer(p => ({ ...p, coins: p.coins + 1000 }))} className="w-full mb-1 bg-yellow-600 rounded-lg py-1 active:scale-95">+1,000 Bua Coin</button>
-        <button onClick={() => setPlayer(p => ({ ...p, level: p.level + 5, currentExp: 0, currentEvolutionStage: getEvolutionStage(p.level + 1) }))} className="w-full mb-1 bg-green-600 rounded-lg py-1 active:scale-95">+5 Level</button>
-        <button onClick={() => setPlayer(p => ({ ...p, level: 10, currentExp: 0, currentEvolutionStage: getEvolutionStage(10), unlockedFeatureIds: [...p.unlockedFeatureIds, 'portfolio', 'money-quests'] }))} className="w-full mb-1 bg-purple-600 rounded-lg py-1 active:scale-95">Set Lv.10 + Unlock Portfolio</button>
-        <button onClick={() => { setPlayer(p => ({ ...p, level: 20, currentExp: 0, currentEvolutionStage: getEvolutionStage(20), unlockedFeatureIds: [...FEATURE_UNLOCKS.map(f => f.id)] })); setShowPathModal(true); }} className="w-full mb-1 bg-orange-600 rounded-lg py-1 active:scale-95">Set Lv.20 + Path</button>
+        <button onClick={() => setPlayer(p => {
+          const level = p.level + 5;
+          const earnedBadgeIds = getBadgeIdsForLevelAndPath(level, p.selectedInvestmentPath, p.earnedBadgeIds);
+          return { ...p, level, earnedBadgeIds, currentExp: 0, currentEvolutionStage: getPlayerEvolutionStage({ ...p, level, earnedBadgeIds }) };
+        })} className="w-full mb-1 bg-green-600 rounded-lg py-1 active:scale-95">+5 Level</button>
+        <button onClick={() => setPlayer(p => {
+          const level = 10;
+          return { ...p, level, currentExp: 0, currentEvolutionStage: getPlayerEvolutionStage({ ...p, level }), unlockedFeatureIds: [...p.unlockedFeatureIds, 'portfolio', 'money-quests'] };
+        })} className="w-full mb-1 bg-purple-600 rounded-lg py-1 active:scale-95">Set Lv.10 + Unlock Portfolio</button>
+        <button onClick={() => { setPlayer(p => {
+          const level = 20;
+          return { ...p, level, currentExp: 0, currentEvolutionStage: getPlayerEvolutionStage({ ...p, level }), unlockedFeatureIds: [...FEATURE_UNLOCKS.map(f => f.id)] };
+        }); setShowPathModal(true); }} className="w-full mb-1 bg-orange-600 rounded-lg py-1 active:scale-95">Set Lv.20 + Path</button>
+        <button onClick={() => setPlayer(p => {
+          const level = 50;
+          const selectedInvestmentPath = p.selectedInvestmentPath ?? 'dividend-keeper';
+          const baseBadgeIds = [...new Set([...p.earnedBadgeIds, 'path-chosen', INVESTMENT_PATHS[selectedInvestmentPath].badgeId])];
+          const earnedBadgeIds = getBadgeIdsForLevelAndPath(level, selectedInvestmentPath, baseBadgeIds);
+          return { ...p, level, selectedInvestmentPath, earnedBadgeIds, currentExp: 0, currentEvolutionStage: getPlayerEvolutionStage({ ...p, level, earnedBadgeIds }) };
+        })} className="w-full mb-1 bg-pink-600 rounded-lg py-1 active:scale-95">Set Lv.50 Path Master</button>
+        <button onClick={() => setPlayer(p => {
+          const level = Math.max(50, p.level);
+          const earnedBadgeIds = [...new Set([...p.earnedBadgeIds, ...PATH_MASTER_BADGE_IDS, INVESTMENT_MASTER_BADGE_ID])];
+          return { ...p, level, earnedBadgeIds, currentExp: 0, currentEvolutionStage: getPlayerEvolutionStage({ ...p, level, earnedBadgeIds }) };
+        })} className="w-full mb-1 bg-yellow-700 rounded-lg py-1 active:scale-95">Complete All Masters</button>
         <button onClick={() => setPlayer(p => ({ ...p, completedQuestIds: [...new Set([...p.completedQuestIds, ...MONEY_QUEST_IDS])] }))} className="w-full mb-1 bg-teal-600 rounded-lg py-1 active:scale-95">Complete Money Quests</button>
         <button onClick={() => setPlayer(p => ({ ...p, completedLessonIds: [...new Set([...p.completedLessonIds, ...STOCK101_LESSONS.map(l => l.id)])], earnedBadgeIds: [...new Set([...p.earnedBadgeIds, STOCK101_CHAPTER_BONUS.badgeId])] }))} className="w-full mb-1 bg-indigo-600 rounded-lg py-1 active:scale-95">Complete Stock 101</button>
         <button onClick={() => { localStorage.removeItem(STORAGE_KEY); window.location.reload(); }} className="w-full bg-red-700 rounded-lg py-1 active:scale-95 flex items-center justify-center gap-1"><RotateCcw size={10}/> Reset All</button>
@@ -1084,7 +1235,7 @@ export default function App() {
         <div className="px-4 pt-4 pb-3 bg-gradient-to-b from-sky-100 to-sky-50">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-14 h-14 rounded-full bg-white shadow-md flex items-center justify-center border-2 border-red-400 overflow-hidden">
-              <img src={BUA_IMG} alt="Bua" className="w-full h-full object-contain"/>
+              <BuaMascot size={52} stage={mascotStage} evolutionStage={evoStage} investmentPath={player.selectedInvestmentPath} imageOverride={mascotImageOverride} imageScale={mascotImageScale} imageOffsetX={profileMascotImageOffset.x} imageOffsetY={profileMascotImageOffset.y}/>
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
@@ -1134,7 +1285,7 @@ export default function App() {
             </div>
             <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10"
               style={{ background: 'transparent', animation: 'float 3s ease-in-out infinite' }}>
-              <BuaMascot size={160} mood={mood} stage={mascotStage} evolutionStage={evoStage} investmentPath={player.selectedInvestmentPath}/>
+              <BuaMascot size={160} mood={mood} stage={mascotStage} evolutionStage={evoStage} investmentPath={player.selectedInvestmentPath} imageOverride={mascotImageOverride} imageScale={mascotImageScale} imageOffsetX={mascotImageOffset.x} imageOffsetY={mascotImageOffset.y}/>
             </div>
             <div className="absolute right-2 top-4 flex flex-col gap-1.5 z-20">
               <button onClick={claimCheckin} className="bg-white rounded-2xl w-12 h-12 shadow-lg flex flex-col items-center justify-center relative active:scale-95 transition">
@@ -1834,13 +1985,20 @@ export default function App() {
     const PathMasterCard = ({ id, path }: { id: InvestmentPath; path: InvestmentPathInfo }) => {
       const selected = player.selectedInvestmentPath === id;
       const master = INVESTMENT_PATH_MASTERS[id];
+      const pathMasterReached = player.earnedBadgeIds.includes(master.badgeId);
       const pathUnlocked = player.level >= 20;
-      const pathMasterReached = selected && player.level >= 35;
+      const displayImageUrl = id === 'value-hunter' && pathMasterReached ? VALUE_MASTER_IMG
+        : id === 'global-explorer' && pathMasterReached ? GLOBAL_MASTER_IMG
+        : id === 'risk-guardian' && pathMasterReached ? GUARDIAN_MASTER_IMG
+        : id === 'dividend-keeper' && pathMasterReached ? DIVIDEND_MASTER_IMG
+        : id === 'esg-hero' && pathMasterReached ? ESG_MASTER_IMG
+        : id === 'bua-trader' && pathMasterReached ? TRADING_MASTER_IMG
+        : path.imageUrl;
       return (
-        <div className={`rounded-2xl p-3 border transition ${selected ? 'bg-gradient-to-r from-orange-50 to-pink-50 border-orange-300 shadow-sm' : pathUnlocked ? 'bg-white border-gray-100' : 'bg-gray-50 border-gray-100 opacity-60'}`}>
+        <div className={`rounded-2xl p-3 border transition ${pathMasterReached ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-300 shadow-sm' : selected ? 'bg-gradient-to-r from-orange-50 to-pink-50 border-orange-300 shadow-sm' : pathUnlocked ? 'bg-white border-gray-100' : 'bg-gray-50 border-gray-100 opacity-60'}`}>
           <div className="flex items-start gap-2">
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${selected ? 'bg-white shadow-sm' : 'bg-gray-50'}`}>
-              {path.imageUrl ? <img src={path.imageUrl} alt={path.name} className="w-full h-full object-contain"/> : <span className="text-xl">{path.icon}</span>}
+              {displayImageUrl ? <img src={displayImageUrl} alt={pathMasterReached ? master.masterName : path.name} className="w-full h-full object-contain"/> : <span className="text-xl">{path.icon}</span>}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -1853,7 +2011,7 @@ export default function App() {
                 {pathMasterReached ? (
                   <span className="text-[10px] bg-orange-100 text-orange-700 font-bold px-2 py-0.5 rounded-full">Master สำเร็จ</span>
                 ) : selected ? (
-                  <span className="text-[10px] bg-blue-100 text-blue-600 font-bold px-2 py-0.5 rounded-full">กำลังพัฒนา</span>
+                  <span className="text-[10px] bg-blue-100 text-blue-600 font-bold px-2 py-0.5 rounded-full">Lv.50 เพื่อเป็น {master.masterName}</span>
                 ) : pathUnlocked ? (
                   <span className="text-[10px] bg-gray-100 text-gray-500 font-bold px-2 py-0.5 rounded-full">ยังไม่ได้เลือก</span>
                 ) : (
@@ -1870,7 +2028,7 @@ export default function App() {
         <div className="font-bold text-xl text-gray-800 mb-4">โปรไฟล์</div>
         <div className="bg-gradient-to-br from-red-400 to-red-500 rounded-2xl p-4 text-white shadow-lg mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center border-2 border-white/40"><BuaMascot size={70} stage={mascotStage} evolutionStage={evoStage} investmentPath={player.selectedInvestmentPath}/></div>
+            <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center border-2 border-white/40"><BuaMascot size={70} stage={mascotStage} evolutionStage={evoStage} investmentPath={player.selectedInvestmentPath} imageOverride={mascotImageOverride} imageScale={mascotImageScale} imageOffsetX={profileMascotImageOffset.x} imageOffsetY={profileMascotImageOffset.y}/></div>
             <div className="flex-1">
               <div className="text-xs opacity-80">Lv.{player.level} — {evoInfo.name}</div>
               <div className="font-bold text-lg leading-tight">{evoInfo.desc}</div>
@@ -1926,13 +2084,14 @@ export default function App() {
           </div>
 
           <div className="mt-4 grid grid-cols-1 gap-2">
-            <div className={`rounded-2xl p-3 border ${player.level >= 50 ? 'bg-purple-50 border-purple-200' : 'bg-gray-50 border-gray-100 opacity-70'}`}>
+            <div className={`rounded-2xl p-3 border ${allPathMastersCompleted ? 'bg-purple-50 border-purple-200' : 'bg-gray-50 border-gray-100 opacity-70'}`}>
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center">🏅</div>
                 <div className="flex-1">
                   <div className="font-black text-gray-800 text-sm">All Masters Completed</div>
-                  <div className="text-[10px] text-gray-500">เป้าหมายระยะยาว: สะสมความเชี่ยวชาญครบทุกสาย</div>
+                  <div className="text-[10px] text-gray-500">ต้องมี Badge Master ครบทุกสายก่อนปลดล็อก Investment Master</div>
                 </div>
+                {allPathMastersCompleted && <CheckCircle size={16} className="text-purple-600"/>}
               </div>
             </div>
             <div className={`rounded-2xl p-3 border ${evoStage === 'investment-master' ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-300 shadow-sm' : 'bg-gray-50 border-gray-100 opacity-70'}`}>
@@ -1952,11 +2111,11 @@ export default function App() {
           <div className="font-bold text-gray-800 text-sm mb-3 flex items-center gap-1.5"><Star size={14} className="text-yellow-500"/> วิวัฒนาการ</div>
           <div className="space-y-2">
             {(Object.entries(EVOLUTION_INFO) as [EvolutionStage, typeof EVOLUTION_INFO[EvolutionStage]][]).map(([key, info]) => {
-              const reached = player.level >= info.minLevel;
+              const reached = key === 'investment-master' ? evoStage === 'investment-master' : player.level >= info.minLevel;
               return (
                 <div key={key} className={`flex items-center gap-2 p-2 rounded-xl ${reached ? 'bg-blue-50' : 'bg-gray-50 opacity-50'}`}>
                   <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow text-base">{reached ? '🐣' : '🔒'}</div>
-                  <div className="flex-1"><div className="text-[10px] text-gray-500">Lv.{info.minLevel}+</div><div className="font-bold text-xs text-gray-800">{info.name}</div></div>
+                  <div className="flex-1"><div className="text-[10px] text-gray-500">{key === 'investment-master' ? 'ต้องมี Master Badge ครบทุกสาย' : `Lv.${info.minLevel}+`}</div><div className="font-bold text-xs text-gray-800">{info.name}</div></div>
                   {reached && <CheckCircle size={14} className="text-green-500"/>}
                 </div>
               );
@@ -2367,7 +2526,7 @@ export default function App() {
         )}
 
         {evolutionInfo && (
-          <EvolutionModal stage={evolutionInfo} onClose={() => setEvolutionInfo(null)}/>
+          <EvolutionModal stage={evolutionInfo} onClose={() => setEvolutionInfo(null)} imageOverride={mascotImageOverride} imageScale={mascotImageScale} imageOffsetX={modalMascotImageOffset.x} imageOffsetY={modalMascotImageOffset.y} investmentPath={player.selectedInvestmentPath}/>
         )}
 
         {showPathModal && !player.selectedInvestmentPath && (
