@@ -89,6 +89,18 @@ interface FriendProfile {
   houseEmoji: string;
   houseNote: string;
   coins: number;
+  trading: TradingStats;
+}
+
+type RankTrend = 'up' | 'down' | 'same';
+
+interface TradingStats {
+  initialCapital: number;
+  portfolioValue: number;
+  returnPct: number;
+  tradeCount: number;
+  winRatePct?: number;
+  rankTrend?: RankTrend;
 }
 
 interface VideoLesson {
@@ -141,6 +153,11 @@ interface SavedGameState {
 // EXP SYSTEM
 // ============================================================
 const SAVE_VERSION = 1;
+const INITIAL_TRADING_CASH = 100000;
+
+function calcTradingReturnPct(portfolioValue: number, initialCapital = INITIAL_TRADING_CASH): number {
+  return initialCapital > 0 ? ((portfolioValue - initialCapital) / initialCapital) * 100 : 0;
+}
 
 function getRequiredExp(level: number): number {
   return 100 + level * 40;
@@ -403,6 +420,7 @@ const FRIENDS: FriendProfile[] = [
     houseEmoji: '🌱',
     houseNote: 'บ้านเริ่มต้นเล็ก ๆ มีมุมอ่านบทเรียนการเงิน',
     coins: 620,
+    trading: { initialCapital: INITIAL_TRADING_CASH, portfolioValue: 95400, returnPct: -4.6, tradeCount: 4, winRatePct: 25, rankTrend: 'same' },
   },
   {
     id: 'poon',
@@ -414,6 +432,7 @@ const FRIENDS: FriendProfile[] = [
     houseEmoji: '💰',
     houseNote: 'บ้านอบอุ่น มีขวดโหลออมเงินและปฏิทินเช็คอิน',
     coins: 1450,
+    trading: { initialCapital: INITIAL_TRADING_CASH, portfolioValue: 98800, returnPct: -1.2, tradeCount: 8, winRatePct: 38, rankTrend: 'down' },
   },
   {
     id: 'beam',
@@ -425,6 +444,7 @@ const FRIENDS: FriendProfile[] = [
     houseEmoji: '📊',
     houseNote: 'บ้านมีจอกระดานกราฟและโต๊ะวางแผนพอร์ตจำลอง',
     coins: 2380,
+    trading: { initialCapital: INITIAL_TRADING_CASH, portfolioValue: 118400, returnPct: 18.4, tradeCount: 22, winRatePct: 64, rankTrend: 'up' },
   },
   {
     id: 'fah',
@@ -437,6 +457,7 @@ const FRIENDS: FriendProfile[] = [
     houseEmoji: '🛡️',
     houseNote: 'บ้านขั้นสูง มีโล่ความเสี่ยงและห้องวิเคราะห์ก่อนลงทุน',
     coins: 5200,
+    trading: { initialCapital: INITIAL_TRADING_CASH, portfolioValue: 107800, returnPct: 7.8, tradeCount: 15, winRatePct: 57, rankTrend: 'up' },
   },
 ];
 
@@ -800,7 +821,7 @@ export default function App() {
   const saved = loadGame();
 
   const [player,      setPlayer]      = useState<PlayerProgress>(saved?.player ?? DEFAULT_PLAYER);
-  const [tradingCash, setTradingCash] = useState(saved?.tradingCash ?? 100000);
+  const [tradingCash, setTradingCash] = useState(saved?.tradingCash ?? INITIAL_TRADING_CASH);
   const [holdings,    setHoldings]    = useState<Record<string, { shares: number; avgCost: number }>>(saved?.holdings ?? {});
   const [tradeHistory,setTradeHistory]= useState<any[]>(saved?.tradeHistory ?? []);
   const [stocks,      setStocks]      = useState(() =>
@@ -934,6 +955,42 @@ export default function App() {
     + (largestHoldingPct > 55 ? -15 : 10)
     + (cashPct > 85 ? -10 : cashPct >= 10 && cashPct <= 40 ? 10 : 0)
   ));
+  const playerTradingReturnPct = calcTradingReturnPct(totalValue);
+  const tradeRankings = [
+    {
+      id: 'player',
+      name: 'You',
+      level: player.level,
+      title: evoInfo.name,
+      isPlayer: true,
+      investmentPath: player.selectedInvestmentPath,
+      evolutionStage: evoStage,
+      mascotStage,
+      portfolioValue: totalValue,
+      returnPct: playerTradingReturnPct,
+      tradeCount: player.tradeCount,
+      winRatePct: undefined as number | undefined,
+      rankTrend: playerTradingReturnPct > 0 ? 'up' as RankTrend : playerTradingReturnPct < 0 ? 'down' as RankTrend : 'same' as RankTrend,
+    },
+    ...FRIENDS.map(friend => ({
+      id: friend.id,
+      name: friend.name,
+      level: friend.level,
+      title: friend.title,
+      isPlayer: false,
+      investmentPath: friend.investmentPath,
+      evolutionStage: getEvolutionStage(friend.level),
+      mascotStage: friend.level >= 30 ? 4 : friend.level >= 20 ? 3 : friend.level >= 10 ? 2 : 1,
+      portfolioValue: friend.trading.portfolioValue,
+      returnPct: friend.trading.returnPct,
+      tradeCount: friend.trading.tradeCount,
+      winRatePct: friend.trading.winRatePct,
+      rankTrend: friend.trading.rankTrend ?? 'same' as RankTrend,
+    })),
+  ]
+    .sort((a, b) => b.returnPct - a.returnPct || b.portfolioValue - a.portfolioValue || a.tradeCount - b.tradeCount)
+    .map((entry, index) => ({ ...entry, rank: index + 1 }));
+  const playerTradeRank = tradeRankings.find(entry => entry.isPlayer);
 
   useEffect(() => {
     if (!portfolioUnlocked && portfolioReady) {
@@ -2146,6 +2203,7 @@ export default function App() {
   // ============================================================
   const FriendScreen = () => {
     const [selectedFriend, setSelectedFriend] = useState<FriendProfile | null>(null);
+    const [friendTab, setFriendTab] = useState<'friends' | 'ranking'>('friends');
 
     if (selectedFriend) {
       const friendEvoStage = getEvolutionStage(selectedFriend.level);
@@ -2154,6 +2212,7 @@ export default function App() {
       const friendPathInfo = selectedFriend.investmentPath ? INVESTMENT_PATHS[selectedFriend.investmentPath] : null;
       const friendMascotStage = selectedFriend.level >= 30 ? 4 : selectedFriend.level >= 20 ? 3 : selectedFriend.level >= 10 ? 2 : 1;
       const friendBgImg = friendEvoStage === 'investment-master' ? BG_MASTER_IMG : BG_IMG;
+      const friendRank = tradeRankings.find(entry => entry.id === selectedFriend.id);
 
       return (
         <div className="pb-24 px-4 pt-4 bg-gradient-to-b from-pink-50 via-sky-50 to-white min-h-screen">
@@ -2226,6 +2285,23 @@ export default function App() {
                   <div className="text-xs text-gray-700 leading-relaxed">{friendPathInfo.strength}</div>
                 </div>
               )}
+
+              {friendRank && (
+                <div className="mt-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl p-3 border border-purple-100">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-[10px] text-purple-500 font-bold">Trade Ranking</div>
+                      <div className="font-black text-gray-800 text-sm">Rank #{friendRank.rank}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className={`font-black text-lg ${friendRank.returnPct >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                        {friendRank.returnPct >= 0 ? '+' : ''}{fmt(friendRank.returnPct)}%
+                      </div>
+                      <div className="text-[10px] text-gray-500">{fmt(friendRank.portfolioValue, 0)} บาท</div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -2237,58 +2313,144 @@ export default function App() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <div className="font-bold text-xl text-gray-800">Friend</div>
-            <div className="text-xs text-gray-500">เลือกเพื่อนเพื่อไปเยี่ยมบ้านน้องบัวของแต่ละคน</div>
+            <div className="text-xs text-gray-500">เยี่ยมบ้านเพื่อนและแข่ง Trade Ranking จาก Return</div>
           </div>
           <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center">
             <Users size={22} className="text-pink-500"/>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-4 shadow-sm mb-4 border border-pink-100">
-          <div className="font-bold text-gray-800 text-sm mb-1">Prototype Mode</div>
-          <div className="text-xs text-gray-500 leading-relaxed">
-            ตอนนี้เป็นเพื่อนจำลอง 4 คน เพื่อทดสอบ flow รายชื่อเพื่อน → เยี่ยมบ้าน → ดูมาสคอต/Level/สายของเพื่อน
-          </div>
+        <div className="bg-white p-1 rounded-2xl shadow-sm border border-pink-100 mb-4 grid grid-cols-2 gap-1">
+          <button onClick={() => setFriendTab('friends')} className={`py-2 rounded-xl text-xs font-black transition ${friendTab === 'friends' ? 'bg-pink-500 text-white shadow' : 'text-gray-500'}`}>
+            บ้านเพื่อน
+          </button>
+          <button onClick={() => setFriendTab('ranking')} className={`py-2 rounded-xl text-xs font-black transition ${friendTab === 'ranking' ? 'bg-purple-500 text-white shadow' : 'text-gray-500'}`}>
+            Trade Ranking
+          </button>
         </div>
 
-        <div className="space-y-3">
-          {FRIENDS.map(friend => {
-            const friendEvoStage = getEvolutionStage(friend.level);
-            const friendEvoInfo = EVOLUTION_INFO[friendEvoStage];
-            const friendPathInfo = friend.investmentPath ? INVESTMENT_PATHS[friend.investmentPath] : null;
-            const friendMascotStage = friend.level >= 30 ? 4 : friend.level >= 20 ? 3 : friend.level >= 10 ? 2 : 1;
-
-            return (
-              <button key={friend.id} onClick={() => setSelectedFriend(friend)}
-                className="w-full bg-white rounded-3xl p-3 shadow-sm text-left active:scale-[0.99] transition border border-gray-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-sky-50 to-pink-50 flex items-center justify-center border border-blue-100 overflow-hidden shrink-0">
-                    <BuaMascot
-                      size={74}
-                      mood="happy"
-                      stage={friendMascotStage}
-                      evolutionStage={friendEvoStage}
-                      investmentPath={friend.investmentPath}
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="font-black text-gray-800">{friend.name}</div>
-                      <div className="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-bold">Lv.{friend.level}</div>
-                    </div>
-                    <div className="text-xs font-bold text-gray-700">{friend.title}</div>
-                    <div className="text-[11px] text-gray-500 mt-0.5 line-clamp-2">
-                      {friendEvoInfo.name}{friendPathInfo ? ` • ${friendPathInfo.icon} ${friendPathInfo.name}` : ''} • {friend.favoriteLesson}
-                    </div>
-                    <div className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-pink-500">
-                      เยี่ยมบ้าน <ChevronRight size={12}/>
-                    </div>
-                  </div>
+        {friendTab === 'ranking' ? (
+          <div className="space-y-3">
+            <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-3xl p-4 text-white shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs opacity-80">Season 1</div>
+                  <div className="font-black text-xl">🏆 Trade Ranking</div>
+                  <div className="text-[11px] opacity-80 mt-1">เรียงอันดับจาก Return เทียบเงินต้น {fmt(INITIAL_TRADING_CASH, 0)} บาท</div>
                 </div>
-              </button>
-            );
-          })}
-        </div>
+                <div className="bg-white/20 rounded-2xl px-3 py-2 text-center">
+                  <div className="text-[10px] opacity-80">Your Rank</div>
+                  <div className="font-black text-2xl">#{playerTradeRank?.rank ?? '-'}</div>
+                </div>
+              </div>
+            </div>
+
+            {tradeRankings.map(entry => {
+              const friend = FRIENDS.find(f => f.id === entry.id);
+              const pathInfo = entry.investmentPath ? INVESTMENT_PATHS[entry.investmentPath] : null;
+              const rankBadge = entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : `#${entry.rank}`;
+              const trendIcon = entry.rankTrend === 'up' ? '↗' : entry.rankTrend === 'down' ? '↘' : '→';
+              const returnUp = entry.returnPct >= 0;
+
+              return (
+                <button
+                  key={entry.id}
+                  onClick={() => friend && setSelectedFriend(friend)}
+                  className={`w-full rounded-3xl p-3 shadow-sm text-left transition border active:scale-[0.99] ${entry.isPlayer ? 'bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200' : 'bg-white border-gray-100'}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 text-center font-black text-lg shrink-0">{rankBadge}</div>
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-50 to-pink-50 border border-blue-100 flex items-center justify-center overflow-hidden shrink-0">
+                      <BuaMascot
+                        size={52}
+                        mood="happy"
+                        stage={entry.mascotStage}
+                        evolutionStage={entry.evolutionStage}
+                        investmentPath={entry.investmentPath}
+                        imageOverride={entry.isPlayer ? mascotImageOverride : undefined}
+                        imageScale={entry.isPlayer && mascotImageOverride ? 1.35 : 1}
+                        imageOffsetY={entry.isPlayer && mascotImageOverride ? 8 : 0}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <div className="font-black text-gray-800 truncate">{entry.name}</div>
+                        {entry.isPlayer && <span className="text-[9px] bg-blue-500 text-white px-1.5 py-0.5 rounded-full font-bold">YOU</span>}
+                        <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full font-bold">Lv.{entry.level}</span>
+                      </div>
+                      <div className="text-[11px] text-gray-500 truncate">
+                        {pathInfo ? `${pathInfo.icon} ${pathInfo.name}` : entry.title} • {entry.tradeCount} trades
+                      </div>
+                      <div className="text-[10px] text-gray-400 mt-0.5">พอร์ต {fmt(entry.portfolioValue, 0)} บาท {entry.winRatePct ? `• Win ${entry.winRatePct}%` : ''}</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className={`font-black text-lg ${returnUp ? 'text-green-600' : 'text-red-500'}`}>
+                        {returnUp ? '+' : ''}{fmt(entry.returnPct)}%
+                      </div>
+                      <div className={`text-[10px] font-bold ${entry.rankTrend === 'up' ? 'text-green-500' : entry.rankTrend === 'down' ? 'text-red-400' : 'text-gray-400'}`}>
+                        {trendIcon} trend
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+
+            <div className="bg-amber-50 border border-amber-100 rounded-2xl p-3 text-[11px] text-amber-700 leading-relaxed">
+              สูตร Ranking: Return = (มูลค่าพอร์ตปัจจุบัน - เงินต้นเริ่มต้น) / เงินต้นเริ่มต้น × 100
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="bg-white rounded-2xl p-4 shadow-sm mb-4 border border-pink-100">
+              <div className="font-bold text-gray-800 text-sm mb-1">Prototype Mode</div>
+              <div className="text-xs text-gray-500 leading-relaxed">
+                ตอนนี้เป็นเพื่อนจำลอง 4 คน เพื่อทดสอบ flow รายชื่อเพื่อน → เยี่ยมบ้าน → ดูมาสคอต/Level/สายของเพื่อน
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {FRIENDS.map(friend => {
+                const friendEvoStage = getEvolutionStage(friend.level);
+                const friendEvoInfo = EVOLUTION_INFO[friendEvoStage];
+                const friendPathInfo = friend.investmentPath ? INVESTMENT_PATHS[friend.investmentPath] : null;
+                const friendMascotStage = friend.level >= 30 ? 4 : friend.level >= 20 ? 3 : friend.level >= 10 ? 2 : 1;
+                const friendRank = tradeRankings.find(entry => entry.id === friend.id);
+
+                return (
+                  <button key={friend.id} onClick={() => setSelectedFriend(friend)}
+                    className="w-full bg-white rounded-3xl p-3 shadow-sm text-left active:scale-[0.99] transition border border-gray-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-sky-50 to-pink-50 flex items-center justify-center border border-blue-100 overflow-hidden shrink-0">
+                        <BuaMascot
+                          size={74}
+                          mood="happy"
+                          stage={friendMascotStage}
+                          evolutionStage={friendEvoStage}
+                          investmentPath={friend.investmentPath}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="font-black text-gray-800">{friend.name}</div>
+                          <div className="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-bold">Lv.{friend.level}</div>
+                          {friendRank && <div className="text-[10px] bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full font-bold">Rank #{friendRank.rank}</div>}
+                        </div>
+                        <div className="text-xs font-bold text-gray-700">{friend.title}</div>
+                        <div className="text-[11px] text-gray-500 mt-0.5 line-clamp-2">
+                          {friendEvoInfo.name}{friendPathInfo ? ` • ${friendPathInfo.icon} ${friendPathInfo.name}` : ''} • Return {friend.trading.returnPct >= 0 ? '+' : ''}{fmt(friend.trading.returnPct)}%
+                        </div>
+                        <div className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-pink-500">
+                          เยี่ยมบ้าน <ChevronRight size={12}/>
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
       </div>
     );
   };
