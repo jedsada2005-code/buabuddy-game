@@ -101,6 +101,7 @@ interface TradingStats {
   portfolioValue: number;
   returnPct: number;
   tradeCount: number;
+  portfolioUnlocked?: boolean;
   winRatePct?: number;
   rankTrend?: RankTrend;
 }
@@ -160,6 +161,22 @@ interface CloudProfile {
   current_evolution_stage: string;
   coins: number;
   updated_at?: string;
+}
+
+interface CloudPortfolioSnapshot {
+  user_id: string;
+  portfolio_unlocked: boolean;
+  portfolio_value: number;
+  return_pct: number;
+  trade_count: number;
+  updated_at?: string;
+}
+
+interface FriendRequestView {
+  id: string;
+  requester_id: string;
+  receiver_id: string;
+  profile: FriendProfile;
 }
 
 type SyncStatus = 'local-only' | 'loading' | 'saving' | 'synced' | 'error';
@@ -605,15 +622,47 @@ const INITIAL_STOCKS = [
   { sym: 'AOT',   name: 'ท่าอากาศยานไทย',           logo: '✈️', cat: 'th', base: 62.75  },
 ];
 
-const genSpark = (base: number, pts = 20) => {
+const MARKET_TICK_MS = 5 * 60 * 1000;
+
+const getMarketTick = (now = Date.now()) => Math.floor(now / MARKET_TICK_MS);
+const getNextMarketTickTime = (tick = getMarketTick()) => (tick + 1) * MARKET_TICK_MS;
+const getMsUntilNextMarketTick = (now = Date.now()) => Math.max(250, MARKET_TICK_MS - (now % MARKET_TICK_MS) + 100);
+
+const seededRandom = (seed: string) => {
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  h += h << 13; h ^= h >>> 7;
+  h += h << 3;  h ^= h >>> 17;
+  h += h << 5;
+  return (h >>> 0) / 4294967296;
+};
+
+const seededRange = (seed: string, min: number, max: number) => min + seededRandom(seed) * (max - min);
+
+const genSpark = (base: number, pts = 20, seed = 'default') => {
   const arr: { i: number; v: number }[] = [];
-  let v = base * 0.97;
+  let v = base * (1 + seededRange(`${seed}-start`, -0.03, 0.01));
   for (let i = 0; i < pts; i++) {
-    v += (Math.random() - 0.48) * base * 0.015;
+    v += seededRange(`${seed}-pt-${i}`, -0.48, 0.52) * base * 0.015;
     arr.push({ i, v: Math.max(base * 0.9, v) });
   }
   return arr;
 };
+
+const buildMarketStocks = (tick = getMarketTick()) =>
+  INITIAL_STOCKS.map(s => {
+    const changePct = seededRange(`${s.sym}-${tick}-change`, -4, 4);
+    return {
+      ...s,
+      price: s.base * (1 + changePct / 100),
+      changePct,
+      spark: genSpark(s.base, 20, `${s.sym}-${tick}`),
+      marketTick: tick,
+    };
+  });
 
 const fmt = (n: number, d = 2) => n.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
 
@@ -730,6 +779,193 @@ async function syncCloudProfileSummary(userId: string, player: PlayerProgress): 
       updated_at: new Date().toISOString(),
     })
     .eq('user_id', userId);
+  if (error) throw error;
+}
+
+function toInvestmentPath(value?: string | null): InvestmentPath | undefined {
+  return value && value in INVESTMENT_PATHS ? value as InvestmentPath : undefined;
+}
+
+function getFriendshipPair(userA: string, userB: string): [string, string] {
+  return userA < userB ? [userA, userB] : [userB, userA];
+}
+
+function normalizePortfolioSnapshot(row: any): CloudPortfolioSnapshot {
+  return {
+    user_id: row.user_id,
+    portfolio_unlocked: Boolean(row.portfolio_unlocked),
+    portfolio_value: Number(row.portfolio_value ?? INITIAL_TRADING_CASH),
+    return_pct: Number(row.return_pct ?? 0),
+    trade_count: Number(row.trade_count ?? 0),
+    updated_at: row.updated_at,
+  };
+}
+
+async function savePortfolioSnapshotToCloud(
+  userId: string,
+  snapshot: Omit<CloudPortfolioSnapshot, 'user_id' | 'updated_at'>
+): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase
+    .from('portfolio_snapshots')
+    .upsert({
+      user_id: userId,
+      portfolio_unlocked: snapshot.portfolio_unlocked,
+      portfolio_value: snapshot.portfolio_value,
+      return_pct: snapshot.return_pct,
+      trade_count: snapshot.trade_count,
+      updated_at: new Date().toISOString(),
+    });
+  if (error) throw error;
+}
+
+function mapCloudProfileToFriend(profile: CloudProfile, snapshot?: CloudPortfolioSnapshot): FriendProfile {
+  const investmentPath = toInvestmentPath(profile.selected_investment_path);
+  const evolutionStage = getEvolutionStage(profile.level);
+  const pathInfo = investmentPath ? INVESTMENT_PATHS[investmentPath] : null;
+  const portfolioUnlocked = Boolean(snapshot?.portfolio_unlocked);
+  const returnPct = portfolioUnlocked ? Number(snapshot?.return_pct ?? 0) : 0;
+
+  return {
+    id: profile.user_id,
+    name: profile.display_name,
+    level: profile.level,
+    title: pathInfo ? pathInfo.name : EVOLUTION_INFO[evolutionStage].name,
+    bio: 'เพื่อนจริงจาก Cloud Save สามารถเยี่ยมบ้าน ดูเลเวล สายการลงทุน และแข่งอันดับ Return ได้',
+    favoriteLesson: profile.level >= 10 ? 'พื้นฐานการลงทุนในหุ้น 101' : 'ทำความรู้จักหุ้นฉบับมือใหม่',
+    investmentPath,
+    houseEmoji: '🏠',
+    houseNote: pathInfo ? `กำลังพัฒนาสาย ${pathInfo.name}` : 'กำลังเริ่มเส้นทางนักลงทุน',
+    coins: profile.coins,
+    trading: {
+      initialCapital: INITIAL_TRADING_CASH,
+      portfolioUnlocked,
+      portfolioValue: portfolioUnlocked ? Number(snapshot?.portfolio_value ?? INITIAL_TRADING_CASH) : INITIAL_TRADING_CASH,
+      returnPct,
+      tradeCount: portfolioUnlocked ? Number(snapshot?.trade_count ?? 0) : 0,
+      winRatePct: undefined,
+      rankTrend: returnPct > 0 ? 'up' : returnPct < 0 ? 'down' : 'same',
+    },
+  };
+}
+
+async function loadCloudFriends(userId: string): Promise<FriendProfile[]> {
+  if (!supabase) return [];
+  const { data: friendships, error } = await supabase
+    .from('friendships')
+    .select('user_id_1,user_id_2')
+    .or(`user_id_1.eq.${userId},user_id_2.eq.${userId}`);
+  if (error) throw error;
+
+  const friendIds = Array.from(new Set((friendships ?? []).map((row: any) => (
+    row.user_id_1 === userId ? row.user_id_2 : row.user_id_1
+  )).filter(Boolean)));
+  if (friendIds.length === 0) return [];
+
+  const { data: profiles, error: profileError } = await supabase
+    .from('profiles')
+    .select('*')
+    .in('user_id', friendIds);
+  if (profileError) throw profileError;
+
+  const { data: snapshots, error: snapshotError } = await supabase
+    .from('portfolio_snapshots')
+    .select('*')
+    .in('user_id', friendIds);
+  if (snapshotError) throw snapshotError;
+
+  const snapshotMap = new Map((snapshots ?? []).map(row => {
+    const snapshot = normalizePortfolioSnapshot(row);
+    return [snapshot.user_id, snapshot];
+  }));
+
+  return (profiles ?? []).map(profile => mapCloudProfileToFriend(
+    profile as CloudProfile,
+    snapshotMap.get(profile.user_id)
+  ));
+}
+
+async function loadCloudFriendRequests(userId: string): Promise<{ incoming: FriendRequestView[]; outgoing: FriendRequestView[] }> {
+  if (!supabase) return { incoming: [], outgoing: [] };
+  const { data: requests, error } = await supabase
+    .from('friend_requests')
+    .select('id,requester_id,receiver_id,status,created_at')
+    .eq('status', 'pending')
+    .or(`requester_id.eq.${userId},receiver_id.eq.${userId}`)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+
+  const requestRows = requests ?? [];
+  const profileIds = Array.from(new Set(requestRows.map((row: any) => (
+    row.requester_id === userId ? row.receiver_id : row.requester_id
+  )).filter(Boolean)));
+  if (profileIds.length === 0) return { incoming: [], outgoing: [] };
+
+  const { data: profiles, error: profileError } = await supabase
+    .from('profiles')
+    .select('*')
+    .in('user_id', profileIds);
+  if (profileError) throw profileError;
+
+  const profileMap = new Map((profiles ?? []).map(profile => [profile.user_id, mapCloudProfileToFriend(profile as CloudProfile)]));
+  const toView = (row: any): FriendRequestView | null => {
+    const otherId = row.requester_id === userId ? row.receiver_id : row.requester_id;
+    const profile = profileMap.get(otherId);
+    return profile ? { id: row.id, requester_id: row.requester_id, receiver_id: row.receiver_id, profile } : null;
+  };
+
+  return {
+    incoming: requestRows.filter((row: any) => row.receiver_id === userId).map(toView).filter(Boolean) as FriendRequestView[],
+    outgoing: requestRows.filter((row: any) => row.requester_id === userId).map(toView).filter(Boolean) as FriendRequestView[],
+  };
+}
+
+async function createCloudFriendRequest(userId: string, friendCode: string): Promise<CloudProfile> {
+  if (!supabase) throw new Error('ยังไม่ได้เชื่อมต่อ Supabase');
+  const code = friendCode.trim().toUpperCase();
+  if (!code) throw new Error('กรุณาใส่ Friend ID ก่อน');
+
+  const { data: target, error: targetError } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('friend_code', code)
+    .maybeSingle();
+  if (targetError) throw targetError;
+  if (!target) throw new Error('ไม่พบ Friend ID นี้ ลองตรวจสอบตัวอักษรอีกครั้ง');
+  if (target.user_id === userId) throw new Error('นี่คือ Friend ID ของคุณเองน้า');
+
+  const [userId1, userId2] = getFriendshipPair(userId, target.user_id);
+  const { data: existingFriendship, error: friendshipError } = await supabase
+    .from('friendships')
+    .select('id')
+    .eq('user_id_1', userId1)
+    .eq('user_id_2', userId2)
+    .maybeSingle();
+  if (friendshipError) throw friendshipError;
+  if (existingFriendship) throw new Error('เป็นเพื่อนกันอยู่แล้ว');
+
+  const { error } = await supabase
+    .from('friend_requests')
+    .insert({
+      requester_id: userId,
+      receiver_id: target.user_id,
+      status: 'pending',
+    });
+  if (error) {
+    const msg = String(error.message).toLowerCase();
+    if (msg.includes('duplicate')) throw new Error('ส่งคำขอไปแล้ว รอเพื่อนกดยืนยันก่อน');
+    throw error;
+  }
+
+  return target as CloudProfile;
+}
+
+async function respondToCloudFriendRequest(requestId: string, action: 'accept' | 'reject'): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.rpc(
+    action === 'accept' ? 'accept_friend_request' : 'reject_friend_request',
+    { request_id: requestId }
+  );
   if (error) throw error;
 }
 
@@ -982,12 +1218,8 @@ export default function App() {
   const [tradingCash, setTradingCash] = useState(saved?.tradingCash ?? INITIAL_TRADING_CASH);
   const [holdings,    setHoldings]    = useState<Record<string, { shares: number; avgCost: number }>>(saved?.holdings ?? {});
   const [tradeHistory,setTradeHistory]= useState<any[]>(saved?.tradeHistory ?? []);
-  const [stocks,      setStocks]      = useState(() =>
-    INITIAL_STOCKS.map(s => {
-      const cp = (Math.random() - 0.5) * 8;
-      return { ...s, price: s.base * (1 + cp / 100), changePct: cp, spark: genSpark(s.base) };
-    })
-  );
+  const [marketTick, setMarketTick] = useState(() => getMarketTick());
+  const [stocks, setStocks] = useState(() => buildMarketStocks(getMarketTick()));
 
   const [screen,     setScreen]     = useState('home');
   const [modal,      setModal]      = useState<any>(null);
@@ -1009,10 +1241,15 @@ export default function App() {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>(isSupabaseConfigured ? 'loading' : 'local-only');
   const [cloudLoading, setCloudLoading] = useState(isSupabaseConfigured);
   const [localMode, setLocalMode] = useState(!isSupabaseConfigured);
+  const [cloudFriends, setCloudFriends] = useState<FriendProfile[]>([]);
+  const [incomingFriendRequests, setIncomingFriendRequests] = useState<FriendRequestView[]>([]);
+  const [outgoingFriendRequests, setOutgoingFriendRequests] = useState<FriendRequestView[]>([]);
+  const [friendLoading, setFriendLoading] = useState(false);
+  const [friendMessage, setFriendMessage] = useState('');
 
-  const dayRef = useRef(1);
   const cloudLoadedRef = useRef(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const portfolioSnapshotTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!supabase) {
@@ -1032,6 +1269,10 @@ export default function App() {
     const { data: subscription } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
       setCloudProfile(null);
+      setCloudFriends([]);
+      setIncomingFriendRequests([]);
+      setOutgoingFriendRequests([]);
+      setFriendMessage('');
       cloudLoadedRef.current = false;
       if (nextSession) {
         setCloudLoading(true);
@@ -1048,6 +1289,33 @@ export default function App() {
       subscription.subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const scheduleNextMarketTick = () => {
+      const nextTick = getMarketTick();
+      setMarketTick(nextTick);
+      timer = setTimeout(scheduleNextMarketTick, getMsUntilNextMarketTick());
+    };
+
+    scheduleNextMarketTick();
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
+
+  useEffect(() => {
+    setStocks(buildMarketStocks(marketTick));
+  }, [marketTick]);
+
+  useEffect(() => {
+    if (!selected?.sym) return;
+    const latestSelected = stocks.find(stock => stock.sym === selected.sym);
+    if (latestSelected && latestSelected.marketTick !== selected.marketTick) {
+      setSelected(latestSelected);
+    }
+  }, [stocks, selected?.sym, selected?.marketTick]);
 
   useEffect(() => {
     if (!supabase || !session || localMode) return;
@@ -1107,6 +1375,76 @@ export default function App() {
       }
     }, 1200);
   }, [player, tradingCash, holdings, tradeHistory, session?.user.id, localMode]);
+
+  const refreshCloudFriends = useCallback(async () => {
+    if (!supabase || !session || localMode) {
+      setCloudFriends([]);
+      setIncomingFriendRequests([]);
+      setOutgoingFriendRequests([]);
+      return;
+    }
+
+    setFriendLoading(true);
+    try {
+      const [friends, requests] = await Promise.all([
+        loadCloudFriends(session.user.id),
+        loadCloudFriendRequests(session.user.id),
+      ]);
+      setCloudFriends(friends);
+      setIncomingFriendRequests(requests.incoming);
+      setOutgoingFriendRequests(requests.outgoing);
+    } catch (error) {
+      console.error('Friend sync failed', error);
+      setFriendMessage('โหลดรายชื่อเพื่อนไม่สำเร็จ ลองตรวจว่า run SQL Phase 2 แล้วหรือยัง');
+    } finally {
+      setFriendLoading(false);
+    }
+  }, [session?.user.id, localMode]);
+
+  useEffect(() => {
+    refreshCloudFriends();
+  }, [refreshCloudFriends, cloudProfile?.friend_code]);
+
+  useEffect(() => {
+    if (screen !== 'friends' || !session || localMode) return;
+    refreshCloudFriends();
+    const interval = setInterval(refreshCloudFriends, 10000);
+    return () => clearInterval(interval);
+  }, [screen, session?.user.id, localMode, refreshCloudFriends]);
+
+  const sendFriendRequest = useCallback(async (friendCode: string) => {
+    if (!session) {
+      setFriendMessage('ต้อง login ก่อนถึงจะเพิ่มเพื่อนจริงได้');
+      return;
+    }
+    setFriendLoading(true);
+    setFriendMessage('');
+    try {
+      const target = await createCloudFriendRequest(session.user.id, friendCode);
+      setFriendMessage(`ส่งคำขอไปหา ${target.display_name} แล้ว`);
+      await refreshCloudFriends();
+    } catch (error) {
+      console.error('Send friend request failed', error);
+      setFriendMessage(error instanceof Error ? error.message : 'ส่งคำขอไม่สำเร็จ');
+    } finally {
+      setFriendLoading(false);
+    }
+  }, [session?.user.id, refreshCloudFriends]);
+
+  const handleFriendRequest = useCallback(async (requestId: string, action: 'accept' | 'reject') => {
+    setFriendLoading(true);
+    setFriendMessage('');
+    try {
+      await respondToCloudFriendRequest(requestId, action);
+      setFriendMessage(action === 'accept' ? 'รับเพื่อนแล้ว! ไปเยี่ยมบ้านได้เลย' : 'ปฏิเสธคำขอแล้ว');
+      await refreshCloudFriends();
+    } catch (error) {
+      console.error('Friend request response failed', error);
+      setFriendMessage(error instanceof Error ? error.message : 'จัดการคำขอไม่สำเร็จ');
+    } finally {
+      setFriendLoading(false);
+    }
+  }, [refreshCloudFriends]);
 
   // --- Derived ---
   const expNeeded     = getRequiredExp(player.level);
@@ -1209,6 +1547,7 @@ export default function App() {
     + (cashPct > 85 ? -10 : cashPct >= 10 && cashPct <= 40 ? 10 : 0)
   ));
   const playerTradingReturnPct = calcTradingReturnPct(totalValue);
+  const activeFriends = session && !localMode ? cloudFriends : FRIENDS;
   const tradeRankings = [
     {
       id: 'player',
@@ -1219,13 +1558,14 @@ export default function App() {
       investmentPath: player.selectedInvestmentPath,
       evolutionStage: evoStage,
       mascotStage,
-      portfolioValue: totalValue,
-      returnPct: playerTradingReturnPct,
-      tradeCount: player.tradeCount,
+      portfolioUnlocked,
+      portfolioValue: portfolioUnlocked ? totalValue : INITIAL_TRADING_CASH,
+      returnPct: portfolioUnlocked ? playerTradingReturnPct : 0,
+      tradeCount: portfolioUnlocked ? player.tradeCount : 0,
       winRatePct: undefined as number | undefined,
-      rankTrend: playerTradingReturnPct > 0 ? 'up' as RankTrend : playerTradingReturnPct < 0 ? 'down' as RankTrend : 'same' as RankTrend,
+      rankTrend: portfolioUnlocked && playerTradingReturnPct > 0 ? 'up' as RankTrend : portfolioUnlocked && playerTradingReturnPct < 0 ? 'down' as RankTrend : 'same' as RankTrend,
     },
-    ...FRIENDS.map(friend => ({
+    ...activeFriends.map(friend => ({
       id: friend.id,
       name: friend.name,
       level: friend.level,
@@ -1234,6 +1574,7 @@ export default function App() {
       investmentPath: friend.investmentPath,
       evolutionStage: getEvolutionStage(friend.level),
       mascotStage: friend.level >= 30 ? 4 : friend.level >= 20 ? 3 : friend.level >= 10 ? 2 : 1,
+      portfolioUnlocked: friend.trading.portfolioUnlocked ?? false,
       portfolioValue: friend.trading.portfolioValue,
       returnPct: friend.trading.returnPct,
       tradeCount: friend.trading.tradeCount,
@@ -1241,9 +1582,29 @@ export default function App() {
       rankTrend: friend.trading.rankTrend ?? 'same' as RankTrend,
     })),
   ]
-    .sort((a, b) => b.returnPct - a.returnPct || b.portfolioValue - a.portfolioValue || a.tradeCount - b.tradeCount)
+    .sort((a, b) => Number(b.portfolioUnlocked) - Number(a.portfolioUnlocked) || b.returnPct - a.returnPct || b.portfolioValue - a.portfolioValue || a.tradeCount - b.tradeCount)
     .map((entry, index) => ({ ...entry, rank: index + 1 }));
   const playerTradeRank = tradeRankings.find(entry => entry.isPlayer);
+
+  useEffect(() => {
+    if (!supabase || !session || localMode || !cloudLoadedRef.current) return;
+    if (portfolioSnapshotTimerRef.current) clearTimeout(portfolioSnapshotTimerRef.current);
+
+    portfolioSnapshotTimerRef.current = setTimeout(async () => {
+      try {
+        await savePortfolioSnapshotToCloud(session.user.id, {
+          portfolio_unlocked: portfolioUnlocked,
+          portfolio_value: portfolioUnlocked ? totalValue : INITIAL_TRADING_CASH,
+          return_pct: portfolioUnlocked ? playerTradingReturnPct : 0,
+          trade_count: portfolioUnlocked ? player.tradeCount : 0,
+        });
+        await refreshCloudFriends();
+      } catch (error) {
+        console.error('Portfolio snapshot sync failed', error);
+        setFriendMessage('ซิงก์ Portfolio Ranking ไม่สำเร็จ ลองตรวจว่า run SQL Snapshot แล้วหรือยัง');
+      }
+    }, 350);
+  }, [session?.user.id, localMode, portfolioUnlocked, totalValue, playerTradingReturnPct, player.tradeCount, refreshCloudFriends]);
 
   useEffect(() => {
     if (!portfolioUnlocked && portfolioReady) {
@@ -1433,16 +1794,6 @@ export default function App() {
   // ============================================================
   // TRADING
   // ============================================================
-  const advanceDay = () => {
-    setStocks(prev => prev.map(s => {
-      const d = (Math.random() - 0.48) * 6;
-      const np = s.price * (1 + d / 100);
-      return { ...s, price: np, changePct: d, spark: [...s.spark.slice(1), { i: s.spark.length, v: np }] };
-    }));
-    dayRef.current += 1;
-    showReward(0, 0, `📅 วันที่ ${dayRef.current} — ราคาอัพเดท!`);
-  };
-
   const buyStock = (stock: any, qty: number) => {
     const cost = stock.price * qty;
     if (cost > tradingCash) { showReward(0, 0, '💸 เงินไม่พอ!'); return; }
@@ -1696,7 +2047,7 @@ export default function App() {
               <div className="font-bold text-gray-800 text-sm mb-2">พอร์ตลงทุนของฉัน</div>
               <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-3 flex items-center gap-3">
                 <div className="flex-1"><div className="text-[10px] text-gray-500">มูลค่ารวม</div><div className="font-bold text-lg text-gray-800">{fmt(totalValue, 0)} <span className="text-xs text-gray-500">บาท</span></div></div>
-                <div className="text-right"><div className="text-[10px] text-gray-500">กำไร/ขาดทุน</div><div className={`font-bold text-sm ${totalPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>{totalPnL >= 0 ? '+' : ''}{fmt(totalPnLPct)}%</div></div>
+                <div className="text-right"><div className="text-[10px] text-gray-500">Return รวม</div><div className={`font-bold text-sm ${playerTradingReturnPct >= 0 ? 'text-green-500' : 'text-red-500'}`}>{playerTradingReturnPct >= 0 ? '+' : ''}{fmt(playerTradingReturnPct)}%</div></div>
                 <ChevronRight size={16} className="text-gray-400"/>
               </div>
             </button>
@@ -2163,22 +2514,34 @@ export default function App() {
 
     // Unlocked — full trading UI
     const filtered = stocks.filter(s => s.cat === cat);
+    const nextMarketUpdateLabel = new Date(getNextMarketTickTime(marketTick)).toLocaleTimeString('th-TH', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
     return (
       <div className="pb-24 min-h-screen bg-gray-50">
         <div className="bg-gradient-to-br from-purple-500 to-purple-600 px-4 pt-5 pb-4 text-white">
           <div className="flex items-center justify-between mb-3">
             <div className="text-xl font-bold">ลงทุน</div>
-            <button onClick={advanceDay} className="bg-white/20 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1 active:scale-95"><Clock size={12}/> วันถัดไป</button>
+            <div className="bg-white/20 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1">
+              <Clock size={12}/> อัปเดตราคา {nextMarketUpdateLabel}
+            </div>
           </div>
           <div className="bg-white/15 rounded-2xl p-3">
             <div className="text-[11px] opacity-80">มูลค่าพอร์ตรวม</div>
             <div className="text-2xl font-bold">{fmt(totalValue)} <span className="text-sm opacity-80">บาท</span></div>
             <div className="flex items-center gap-3 mt-1 text-xs">
               <div className="flex items-center gap-1"><Wallet size={12}/> เงินสด {fmt(tradingCash, 0)}</div>
-              <div className={`flex items-center gap-1 font-bold ${totalPnL >= 0 ? 'text-green-200' : 'text-red-200'}`}>
-                {totalPnL >= 0 ? <TrendingUp size={12}/> : <TrendingDown size={12}/>}
-                {totalPnL >= 0 ? '+' : ''}{fmt(totalPnL)} ({totalPnLPct >= 0 ? '+' : ''}{fmt(totalPnLPct)}%)
+              <div className={`flex items-center gap-1 font-bold ${playerTradingReturnPct >= 0 ? 'text-green-200' : 'text-red-200'}`}>
+                {playerTradingReturnPct >= 0 ? <TrendingUp size={12}/> : <TrendingDown size={12}/>}
+                Return รวม {playerTradingReturnPct >= 0 ? '+' : ''}{fmt(playerTradingReturnPct)}%
               </div>
+            </div>
+            <div className="mt-1 text-[11px] opacity-80">
+              กำไร/ขาดทุนของหุ้นที่ถือ: {totalPnL >= 0 ? '+' : ''}{fmt(totalPnL)} บาท ({totalPnLPct >= 0 ? '+' : ''}{fmt(totalPnLPct)}%)
+            </div>
+            <div className="mt-1 text-[10px] opacity-70">
+              Ranking ใช้สูตร Return รวมเทียบเงินต้น {fmt(INITIAL_TRADING_CASH, 0)} บาท
             </div>
             <div className="mt-3 bg-white/15 rounded-xl p-2">
               <div className="flex items-center justify-between text-xs mb-1">
@@ -2488,6 +2851,8 @@ export default function App() {
   const FriendScreen = () => {
     const [selectedFriend, setSelectedFriend] = useState<FriendProfile | null>(null);
     const [friendTab, setFriendTab] = useState<'friends' | 'ranking'>('friends');
+    const [friendCodeInput, setFriendCodeInput] = useState('');
+    const isCloudFriendMode = Boolean(session && !localMode);
     const visitFriend = (friend: FriendProfile) => {
       setSelectedFriend(friend);
       if (!player.completedQuestIds.includes('q7')) {
@@ -2507,6 +2872,7 @@ export default function App() {
       const friendMascotStage = selectedFriend.level >= 30 ? 4 : selectedFriend.level >= 20 ? 3 : selectedFriend.level >= 10 ? 2 : 1;
       const friendBgImg = friendEvoStage === 'investment-master' ? BG_MASTER_IMG : BG_IMG;
       const friendRank = tradeRankings.find(entry => entry.id === selectedFriend.id);
+      const friendPortfolioUnlocked = Boolean(friendRank?.portfolioUnlocked);
 
       return (
         <div className="pb-24 px-4 pt-4 bg-gradient-to-b from-pink-50 via-sky-50 to-white min-h-screen">
@@ -2588,10 +2954,12 @@ export default function App() {
                       <div className="font-black text-gray-800 text-sm">Rank #{friendRank.rank}</div>
                     </div>
                     <div className="text-right">
-                      <div className={`font-black text-lg ${friendRank.returnPct >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                        {friendRank.returnPct >= 0 ? '+' : ''}{fmt(friendRank.returnPct)}%
+                      <div className={`font-black text-lg ${!friendPortfolioUnlocked ? 'text-gray-400' : friendRank.returnPct >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                        {friendPortfolioUnlocked ? `${friendRank.returnPct >= 0 ? '+' : ''}${fmt(friendRank.returnPct)}%` : '—'}
                       </div>
-                      <div className="text-[10px] text-gray-500">{fmt(friendRank.portfolioValue, 0)} บาท</div>
+                      <div className="text-[10px] text-gray-500">
+                        {friendPortfolioUnlocked ? `${fmt(friendRank.portfolioValue, 0)} บาท` : 'ยังไม่เปิด Portfolio'}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2640,11 +3008,12 @@ export default function App() {
             </div>
 
             {tradeRankings.map(entry => {
-              const friend = FRIENDS.find(f => f.id === entry.id);
+              const friend = activeFriends.find(f => f.id === entry.id);
               const pathInfo = entry.investmentPath ? INVESTMENT_PATHS[entry.investmentPath] : null;
               const rankBadge = entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : `#${entry.rank}`;
               const trendIcon = entry.rankTrend === 'up' ? '↗' : entry.rankTrend === 'down' ? '↘' : '→';
               const returnUp = entry.returnPct >= 0;
+              const entryPortfolioUnlocked = Boolean(entry.portfolioUnlocked);
 
               return (
                 <button
@@ -2673,16 +3042,18 @@ export default function App() {
                         <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full font-bold">Lv.{entry.level}</span>
                       </div>
                       <div className="text-[11px] text-gray-500 truncate">
-                        {pathInfo ? `${pathInfo.icon} ${pathInfo.name}` : entry.title} • {entry.tradeCount} trades
+                        {pathInfo ? `${pathInfo.icon} ${pathInfo.name}` : entry.title} • {entryPortfolioUnlocked ? `${entry.tradeCount} trades` : 'ยังไม่เปิด Portfolio'}
                       </div>
-                      <div className="text-[10px] text-gray-400 mt-0.5">พอร์ต {fmt(entry.portfolioValue, 0)} บาท {entry.winRatePct ? `• Win ${entry.winRatePct}%` : ''}</div>
+                      <div className="text-[10px] text-gray-400 mt-0.5">
+                        {entryPortfolioUnlocked ? `พอร์ต ${fmt(entry.portfolioValue, 0)} บาท ${entry.winRatePct ? `• Win ${entry.winRatePct}%` : ''}` : 'ต้องปลดล็อก Portfolio Simulation ก่อนถึงจะมี Return'}
+                      </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <div className={`font-black text-lg ${returnUp ? 'text-green-600' : 'text-red-500'}`}>
-                        {returnUp ? '+' : ''}{fmt(entry.returnPct)}%
+                      <div className={`font-black text-lg ${!entryPortfolioUnlocked ? 'text-gray-400' : returnUp ? 'text-green-600' : 'text-red-500'}`}>
+                        {entryPortfolioUnlocked ? `${returnUp ? '+' : ''}${fmt(entry.returnPct)}%` : '—'}
                       </div>
-                      <div className={`text-[10px] font-bold ${entry.rankTrend === 'up' ? 'text-green-500' : entry.rankTrend === 'down' ? 'text-red-400' : 'text-gray-400'}`}>
-                        {trendIcon} trend
+                      <div className={`text-[10px] font-bold ${!entryPortfolioUnlocked ? 'text-gray-400' : entry.rankTrend === 'up' ? 'text-green-500' : entry.rankTrend === 'down' ? 'text-red-400' : 'text-gray-400'}`}>
+                        {entryPortfolioUnlocked ? `${trendIcon} trend` : 'locked'}
                       </div>
                     </div>
                   </div>
@@ -2697,19 +3068,115 @@ export default function App() {
         ) : (
           <>
             <div className="bg-white rounded-2xl p-4 shadow-sm mb-4 border border-pink-100">
-              <div className="font-bold text-gray-800 text-sm mb-1">Prototype Mode</div>
+              <div className="font-bold text-gray-800 text-sm mb-1">{isCloudFriendMode ? 'Cloud Friend Mode' : 'Prototype Mode'}</div>
               <div className="text-xs text-gray-500 leading-relaxed">
-                ตอนนี้เป็นเพื่อนจำลอง 4 คน เพื่อทดสอบ flow รายชื่อเพื่อน → เยี่ยมบ้าน → ดูมาสคอต/Level/สายของเพื่อน
+                {isCloudFriendMode
+                  ? 'เพิ่มเพื่อนจริงด้วย Friend ID แล้วเยี่ยมบ้านเพื่อดูมาสคอต Level และสายการลงทุนของเพื่อน'
+                  : 'ตอนนี้เป็นเพื่อนจำลอง 4 คน เพื่อทดสอบ flow รายชื่อเพื่อน → เยี่ยมบ้าน → ดูมาสคอต/Level/สายของเพื่อน'}
               </div>
             </div>
 
+            {isCloudFriendMode && (
+              <div className="bg-white rounded-3xl p-4 shadow-sm mb-4 border border-blue-100">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="font-black text-gray-800 text-sm">เพิ่มเพื่อนด้วย Friend ID</div>
+                    <div className="text-[11px] text-gray-500 mt-0.5">
+                      ID ของคุณ: <span className="font-black text-blue-600">{cloudProfile?.friend_code ?? 'กำลังโหลด...'}</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={refreshCloudFriends}
+                    disabled={friendLoading}
+                    className="text-[10px] font-bold text-blue-500 bg-blue-50 px-3 py-1.5 rounded-full disabled:opacity-50"
+                  >
+                    รีเฟรช
+                  </button>
+                </div>
+
+                <div className="flex gap-2 mt-3">
+                  <input
+                    value={friendCodeInput}
+                    onChange={e => setFriendCodeInput(e.target.value.toUpperCase())}
+                    placeholder="เช่น BUA-ABCDE"
+                    className="flex-1 bg-gray-50 border border-gray-200 rounded-2xl px-3 py-2 text-sm font-bold outline-none focus:border-blue-300"
+                  />
+                  <button
+                    onClick={() => {
+                      sendFriendRequest(friendCodeInput);
+                      setFriendCodeInput('');
+                    }}
+                    disabled={friendLoading || !friendCodeInput.trim()}
+                    className="bg-pink-500 text-white rounded-2xl px-4 py-2 text-xs font-black shadow disabled:opacity-40"
+                  >
+                    ส่งคำขอ
+                  </button>
+                </div>
+
+                {friendMessage && (
+                  <div className="mt-3 text-[11px] font-bold text-blue-600 bg-blue-50 rounded-2xl px-3 py-2">
+                    {friendMessage}
+                  </div>
+                )}
+
+                {incomingFriendRequests.length > 0 && (
+                  <div className="mt-4">
+                    <div className="text-[11px] font-black text-gray-700 mb-2">คำขอเป็นเพื่อน</div>
+                    <div className="space-y-2">
+                      {incomingFriendRequests.map(request => (
+                        <div key={request.id} className="bg-pink-50 border border-pink-100 rounded-2xl p-3 flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center overflow-hidden shrink-0">
+                            <BuaMascot
+                              size={38}
+                              mood="happy"
+                              stage={request.profile.level >= 30 ? 4 : request.profile.level >= 20 ? 3 : request.profile.level >= 10 ? 2 : 1}
+                              evolutionStage={getEvolutionStage(request.profile.level)}
+                              investmentPath={request.profile.investmentPath}
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-black text-gray-800 text-sm truncate">{request.profile.name}</div>
+                            <div className="text-[10px] text-gray-500">Lv.{request.profile.level} • {request.profile.title}</div>
+                          </div>
+                          <button onClick={() => handleFriendRequest(request.id, 'accept')} disabled={friendLoading} className="bg-green-500 text-white rounded-full px-3 py-1.5 text-[10px] font-black disabled:opacity-50">รับ</button>
+                          <button onClick={() => handleFriendRequest(request.id, 'reject')} disabled={friendLoading} className="bg-gray-200 text-gray-600 rounded-full px-3 py-1.5 text-[10px] font-black disabled:opacity-50">ปฏิเสธ</button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {outgoingFriendRequests.length > 0 && (
+                  <div className="mt-4">
+                    <div className="text-[11px] font-black text-gray-700 mb-2">รอเพื่อนยืนยัน</div>
+                    <div className="flex flex-wrap gap-2">
+                      {outgoingFriendRequests.map(request => (
+                        <div key={request.id} className="bg-gray-50 border border-gray-100 rounded-full px-3 py-1.5 text-[11px] font-bold text-gray-600">
+                          {request.profile.name} • pending
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="space-y-3">
-              {FRIENDS.map(friend => {
+              {activeFriends.length === 0 && (
+                <div className="bg-white border border-dashed border-pink-200 rounded-3xl p-6 text-center">
+                  <div className="text-3xl mb-2">🌱</div>
+                  <div className="font-black text-gray-800">ยังไม่มีเพื่อนใน Cloud</div>
+                  <div className="text-xs text-gray-500 mt-1">เอา Friend ID ของเพื่อนมาใส่ด้านบน หรือให้เพื่อนส่งคำขอมาหาคุณ</div>
+                </div>
+              )}
+
+              {activeFriends.map(friend => {
                 const friendEvoStage = getEvolutionStage(friend.level);
                 const friendEvoInfo = EVOLUTION_INFO[friendEvoStage];
                 const friendPathInfo = friend.investmentPath ? INVESTMENT_PATHS[friend.investmentPath] : null;
                 const friendMascotStage = friend.level >= 30 ? 4 : friend.level >= 20 ? 3 : friend.level >= 10 ? 2 : 1;
                 const friendRank = tradeRankings.find(entry => entry.id === friend.id);
+                const friendPortfolioUnlocked = Boolean(friend.trading.portfolioUnlocked);
 
                 return (
                   <button key={friend.id} onClick={() => visitFriend(friend)}
@@ -2732,7 +3199,7 @@ export default function App() {
                         </div>
                         <div className="text-xs font-bold text-gray-700">{friend.title}</div>
                         <div className="text-[11px] text-gray-500 mt-0.5 line-clamp-2">
-                          {friendEvoInfo.name}{friendPathInfo ? ` • ${friendPathInfo.icon} ${friendPathInfo.name}` : ''} • Return {friend.trading.returnPct >= 0 ? '+' : ''}{fmt(friend.trading.returnPct)}%
+                          {friendEvoInfo.name}{friendPathInfo ? ` • ${friendPathInfo.icon} ${friendPathInfo.name}` : ''} • {friendPortfolioUnlocked ? `Return ${friend.trading.returnPct >= 0 ? '+' : ''}${fmt(friend.trading.returnPct)}%` : 'ยังไม่เปิด Portfolio'}
                         </div>
                         <div className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-pink-500">
                           เยี่ยมบ้าน <ChevronRight size={12}/>
