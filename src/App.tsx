@@ -2585,7 +2585,7 @@ export default function App() {
         <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex shadow-lg">
           <NavItem id="home"    icon={Home}     label="หน้าหลัก"/>
           <NavItem id="quests"  icon={BookOpen}  label="ภารกิจ"/>
-          <NavItem id="invest"  icon={LineIcon}  label="ลงทุน"/>
+          <NavItem id="invest"  icon={LineIcon}  label="Portfolio simulation"/>
           <NavItem id="friends" icon={Users}     label="Friend"/>
           <NavItem id="profile" icon={User}      label="โปรไฟล์"/>
         </div>
