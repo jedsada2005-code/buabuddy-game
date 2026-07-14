@@ -46,7 +46,7 @@ type EvolutionStage = 'bua-seed' | 'bua-saver' | 'bua-investor' | 'specialized-b
 type LearningPhase  = 'basics' | 'money-management' | 'investment-basics' | 'goal-based' | 'specialization';
 type InvestmentPath = 'value-hunter' | 'global-explorer' | 'risk-guardian' | 'dividend-keeper' | 'bua-trader' | 'esg-hero';
 type QuestCategory = 'basic' | 'money-management' | 'investment' | 'goal' | 'specialization';
-type QuestType = 'lesson' | 'quiz' | 'scenario' | 'action' | 'trade';
+type QuestType = 'lesson' | 'quiz' | 'scenario' | 'action' | 'trade' | 'friend';
 type QuestStatus = 'available' | 'in-progress' | 'reward' | 'done' | 'locked';
 
 interface Quest {
@@ -211,8 +211,7 @@ const FEATURE_UNLOCKS: FeatureUnlock[] = [
   { id: 'shop',            name: 'ร้านค้า',              description: 'ซื้ออาหารให้น้องบัว',                  requiredLevel: 1,  icon: '🛒' },
   { id: 'money-quests',    name: 'เควสต์จัดการเงิน',    description: 'เรียนรู้การจัดการเงินอย่างชาญฉลาด',   requiredLevel: 6,  icon: '💰' },
   { id: 'portfolio',       name: 'พอร์ตจำลอง',           description: 'ฝึกลงทุนด้วยเงินจำลอง',               requiredLevel: 10, icon: '📊',
-    requiredQuestIds: ['mq1', 'mq2', 'mq3', 'mq4', 'mq5', 'iq1', 'iq2', 'iq3'],
-    requiredLessonIds: ['lesson-emergency-fund', 'lesson-risk-return', 'lesson-risk-profile', 'lesson-pre-investment-final'] },
+    requiredLessonIds: ['stock101-1-1'] },
   { id: 'dca-simulation',  name: 'จำลอง DCA',            description: 'ฝึกลงทุนแบบ DCA',                     requiredLevel: 11, icon: '🔄' },
   { id: 'goals',           name: 'เป้าหมายการเงิน',      description: 'ตั้งเป้าหมายและติดตามความคืบหน้า',     requiredLevel: 16, icon: '🎯' },
   { id: 'inv-path',        name: 'เลือกเส้นทางลงทุน',    description: 'ค้นพบสไตล์การลงทุนของคุณ',            requiredLevel: 20, icon: '🌟' },
@@ -298,69 +297,58 @@ function getBadgeIdsForLevelAndPath(level: number, selectedInvestmentPath: Inves
 // ============================================================
 // STATIC DATA (Quests, Shop, etc.)
 // ============================================================
-const MONEY_QUEST_IDS = ['mq1', 'mq2', 'mq3', 'mq4', 'mq5'];
+const MONEY_QUEST_IDS: string[] = [];
 
 const QUESTS: Quest[] = [
-  { id: 'q1', category: 'basic', type: 'lesson', icon: '📚', title: 'ETF คืออะไร?', desc: 'อ่านบทความให้จบ', requiredLevel: 1, lessonId: 'lesson-etf-basics',
-    lesson: 'ETF (Exchange Traded Fund) คือกองทุนรวมที่ซื้อขายในตลาดหลักทรัพย์ได้เหมือนหุ้น มีค่าธรรมเนียมต่ำ กระจายความเสี่ยง เหมาะกับนักลงทุนมือใหม่',
-    question: 'ETF ย่อมาจากอะไร?',
-    options: ['Exchange Traded Fund', 'Electronic Trading Form', 'European Trade Fund', 'Equity Transfer Fund'],
-    correct: 0, exp: 120, coins: 80 },
-  { id: 'q2', category: 'basic', type: 'quiz', icon: '🎯', title: 'การกระจายความเสี่ยง', desc: 'ตอบคำถามให้ถูก', requiredLevel: 1,
-    question: 'การกระจายความเสี่ยง (Diversification) คืออะไร?',
-    options: ['ลงทุนหุ้นตัวเดียวทั้งหมด', 'ลงทุนในสินทรัพย์หลากหลาย', 'เก็บเงินสดเท่านั้น', 'กู้เงินมาลงทุน'],
-    correct: 1, exp: 150, coins: 100 },
-  { id: 'q3', category: 'basic', type: 'quiz', icon: '⚠️', title: 'ระบุการหลอกลวง', desc: 'ฝึกระวังภัยลงทุน', requiredLevel: 1,
-    question: 'ข้อใดเป็นสัญญาณของการหลอกลวงการลงทุน?',
-    options: ['มีใบอนุญาตจาก ก.ล.ต.', 'เปิดเผยข้อมูลโปร่งใส', 'รับประกันผลตอบแทนสูงไม่มีความเสี่ยง', 'มีประวัติยาวนาน'],
-    correct: 2, exp: 200, coins: 150 },
-  { id: 'q4', category: 'basic', type: 'action', icon: '🍎', title: 'ให้อาหาร Bua Buddy', desc: 'ดูแลความสุข 1 ครั้ง', requiredLevel: 1, exp: 50, coins: 30 },
-  { id: 'q5', category: 'basic', type: 'lesson', icon: '📰', title: 'อ่านข่าวตลาด', desc: 'อ่านข่าวการเงิน 1 บทความ', requiredLevel: 1, lessonId: 'lesson-market-news',
-    lesson: 'การติดตามข่าวสารตลาดช่วยให้เข้าใจปัจจัยที่กระทบราคาหลักทรัพย์ เช่น อัตราดอกเบี้ย เงินเฟ้อ นโยบายรัฐ',
-    question: 'การติดตามข่าวสารช่วยอะไร?',
-    options: ['ทำกำไรทันที', 'เข้าใจปัจจัยกระทบตลาด', 'รับประกันผลตอบแทน', 'หลีกเลี่ยงการขาดทุน'],
-    correct: 1, exp: 80, coins: 50 },
-  { id: 'q6', category: 'basic', type: 'trade', icon: '💎', title: 'ลองซื้อหุ้นครั้งแรก', desc: 'ทำการซื้อขายจำลอง 1 ครั้ง', requiredLevel: 1, exp: 130, coins: 90 },
-  { id: 'mq1', category: 'money-management', type: 'scenario', icon: '💸', title: 'แบ่งเงินอย่างไรดี?', desc: 'ฝึกแยกเงินใช้ เงินออม และเงินที่พร้อมลงทุนผ่านสถานการณ์จำลอง', requiredLevel: 6, lessonId: 'lesson-money-allocation',
-    lesson: 'ก่อนเริ่มลงทุน ควรจัดลำดับเงินให้ชัด: เงินใช้จ่ายจำเป็น เงินออม/เป้าหมาย เงินสำรองฉุกเฉิน และเงินส่วนที่รับความเสี่ยงได้ แนวคิดนี้เป็นบทเรียนจำลอง ไม่ใช่ระบบกระเป๋าเงินจริงในแอป',
-    question: 'น้องบัวมี 1,000 Coin สำหรับสถานการณ์จำลอง ควรตัดสินใจอย่างไรดีที่สุด?',
-    options: ['ใช้จ่ายทั้งหมด 1,000', 'ออมทั้งหมด 1,000 โดยไม่เหลือใช้จ่ายจำเป็น', 'แบ่งใช้จ่ายจำเป็น ออม และกันเงินฉุกเฉินก่อนคิดเรื่องลงทุน', 'ลงทุนทั้งหมด 1,000 ทันที'],
-    correct: 2, exp: 180, coins: 120 },
-  { id: 'mq2', category: 'money-management', type: 'scenario', icon: '🛡️', title: 'เงินสำรองฉุกเฉิน', desc: 'รับมือสถานการณ์ไม่คาดฝันก่อนนำเงินไปลงทุน', requiredLevel: 6, prerequisiteQuestIds: ['mq1'], lessonId: 'lesson-emergency-fund',
-    lesson: 'เงินสำรองฉุกเฉินช่วยให้เราไม่ต้องขายสินทรัพย์หรือตัดสินใจลงทุนผิดจังหวะเมื่อมีเหตุไม่คาดคิด ควรเป็นเงินที่เข้าถึงง่ายและไม่ผันผวนมาก',
-    question: 'โทรศัพท์น้องบัวพัง ซ่อม 800 Coin น้องบัวควรทำอะไรในสถานการณ์จำลอง?',
-    options: ['ขายหุ้นที่ลงทุนไว้ทันที', 'กู้เงินเพื่อนมาซ่อม', 'ใช้เงินสำรองฉุกเฉินที่เตรียมไว้', 'ไม่ซ่อม'],
-    correct: 2, exp: 180, coins: 120, badgeId: 'emergency-ready' },
-  { id: 'mq3', category: 'money-management', type: 'scenario', icon: '🎮', title: 'อยากได้ vs. เป้าหมายใหญ่', desc: 'ฝึกคิดเรื่อง needs, wants และค่าเสียโอกาส', requiredLevel: 7, prerequisiteQuestIds: ['mq2'], lessonId: 'lesson-opportunity-cost',
-    lesson: 'Needs คือสิ่งจำเป็นต่อชีวิตหรือเป้าหมายหลัก ส่วน wants คือสิ่งที่อยากได้ ค่าเสียโอกาสคือสิ่งที่เรายอมสละเมื่อเลือกทางหนึ่งแทนอีกทางหนึ่ง',
-    question: 'น้องบัวอยากซื้อชุดลิมิเต็ด 500 Coin แต่กำลังเก็บเงินซื้อจักรยาน ควรคิดอย่างไร?',
-    options: ['ซื้อชุดก่อน เดี๋ยวค่อยออมใหม่', 'เทียบกับเป้าหมายจักรยาน แล้วรอถ้าชุดทำให้เป้าหมายล่าช้าเกินไป', 'กู้เงินซื้อชุด', 'ละทิ้งเป้าหมายจักรยานทันที'],
-    correct: 1, exp: 160, coins: 110 },
-  { id: 'mq4', category: 'money-management', type: 'lesson', icon: '📉', title: 'เงินเฟ้อคืออะไร?', desc: 'เข้าใจกำลังซื้อที่ลดลงและเหตุผลที่ต้องวางแผน', requiredLevel: 7, prerequisiteQuestIds: ['mq3'], lessonId: 'lesson-inflation',
-    lesson: 'เงินเฟ้อทำให้ของชิ้นเดิมมีราคาแพงขึ้นเมื่อเวลาผ่านไป ถ้าเงินออมเติบโตช้ากว่าเงินเฟ้อ กำลังซื้อจริงจะลดลง การลงทุนจึงเป็นเครื่องมือหนึ่ง แต่ต้องเริ่มหลังจัดการเงินพื้นฐานแล้ว',
-    question: 'ขนมน้องบัวเคยราคา 50 Coin ตอนนี้ขึ้นเป็น 60 Coin สาเหตุหลักคืออะไร?',
-    options: ['ร้านค้าโลภมาก', 'เงินเฟ้อทำให้ราคาสินค้าสูงขึ้น', 'ขนมอร่อยขึ้น', 'Bua Coin มีค่ามากขึ้น'],
-    correct: 1, exp: 160, coins: 110 },
-  { id: 'mq5', category: 'money-management', type: 'scenario', icon: '🚀', title: 'พร้อมลงทุนแล้วหรือยัง?', desc: 'ภารกิจสรุปก่อนเข้าสู่พอร์ตจำลอง', requiredLevel: 8, prerequisiteQuestIds: ['mq4'], lessonId: 'lesson-investing-readiness',
-    lesson: 'เงินที่จะนำไปลงทุนควรเป็นเงินที่ไม่กระทบค่าใช้จ่ายจำเป็น มีเงินสำรองเพียงพอ และมีเวลาให้รับความผันผวนได้ การลงทุนทั้งหมดโดยไม่กันเงินพื้นฐานไว้มีความเสี่ยงสูง',
-    question: 'น้องบัวมี 5,000 Coin มีค่าใช้จ่ายรายเดือน เงินสำรองน้อย และเป้าหมายระยะยาว ควรตัดสินใจอย่างไร?',
-    options: ['ลงทุนทั้งหมด 5,000', 'ลงทุน 0 และไม่วางแผนอะไรต่อ', 'จัดค่าใช้จ่ายและเงินสำรองก่อน แล้วค่อยลงทุนเฉพาะส่วนที่รับความเสี่ยงได้', 'กู้เงินมาลงทุนเพิ่ม'],
-    correct: 2, exp: 250, coins: 200, badgeId: 'invest-ready' },
-  { id: 'iq1', category: 'investment', type: 'lesson', icon: '⚖️', title: 'Risk & Return เบื้องต้น', desc: 'เข้าใจว่าผลตอบแทนที่สูงขึ้นมักมากับความเสี่ยงที่สูงขึ้น', requiredLevel: 9, prerequisiteQuestIds: ['mq5'], lessonId: 'lesson-risk-return',
-    lesson: 'การลงทุนมีโอกาสได้ผลตอบแทนมากกว่าเงินฝาก แต่ราคาสินทรัพย์อาจขึ้นลงได้ ความเสี่ยงไม่ใช่เรื่องน่ากลัวถ้าเข้าใจเวลา เป้าหมาย และขนาดเงินที่รับความผันผวนได้',
-    question: 'ข้อใดอธิบายความสัมพันธ์ระหว่างความเสี่ยงและผลตอบแทนได้ดีที่สุด?',
-    options: ['ผลตอบแทนสูงแปลว่าไม่มีความเสี่ยง', 'สินทรัพย์ที่มีโอกาสให้ผลตอบแทนสูงมักมีความผันผวนสูงกว่า', 'เงินสดให้ผลตอบแทนสูงที่สุดเสมอ', 'ความเสี่ยงไม่มีผลต่อการลงทุน'],
-    correct: 1, exp: 180, coins: 120 },
-  { id: 'iq2', category: 'investment', type: 'scenario', icon: '🧭', title: 'Risk Profile Quiz', desc: 'สำรวจระดับความเสี่ยงที่เหมาะกับตัวเองก่อนเริ่มจำลองพอร์ต', requiredLevel: 9, prerequisiteQuestIds: ['iq1'], lessonId: 'lesson-risk-profile',
-    lesson: 'Risk profile ช่วยให้เลือกพอร์ตที่เหมาะกับตัวเอง โดยดูจากเป้าหมาย ระยะเวลา ความมั่นคงของเงินสำรอง และความสบายใจเมื่อเห็นพอร์ตผันผวน',
-    question: 'ถ้าน้องบัวเห็นพอร์ตจำลองลดลง 10% ในระยะสั้น แต่เป้าหมายยังอีกหลายปี ควรทำอย่างไร?',
-    options: ['ขายทุกอย่างทันทีโดยไม่ทบทวนแผน', 'กู้เงินเพิ่มเพื่อลงทุนคืนทุน', 'ทบทวนแผน ความเสี่ยง และเป้าหมายก่อนตัดสินใจ', 'เลิกเรียนเรื่องลงทุนทั้งหมด'],
-    correct: 2, exp: 180, coins: 120 },
-  { id: 'iq3', category: 'investment', type: 'scenario', icon: '🔐', title: 'ด่านสุดท้ายก่อนสร้างพอร์ต', desc: 'ยืนยันว่าพร้อมใช้พอร์ตจำลองเพื่อการเรียนรู้ ไม่ใช่คำแนะนำลงทุนจริง', requiredLevel: 10, prerequisiteQuestIds: ['iq2'], lessonId: 'lesson-pre-investment-final',
-    lesson: 'พอร์ตจำลองมีไว้ฝึกคิดเรื่องสินทรัพย์ ความเสี่ยง และการกระจายการลงทุน ผลลัพธ์ในแอปเป็นการศึกษาเท่านั้น ไม่ใช่คำแนะนำการลงทุนจริง',
-    question: 'ก่อนเริ่มพอร์ตจำลอง น้องบัวควรจำอะไรไว้เสมอ?',
-    options: ['ผลลัพธ์จำลองรับประกันกำไรจริง', 'ควรลงทุนจริงตามเกมทันที', 'ใช้พอร์ตจำลองเพื่อเรียนรู้และตัดสินใจจริงด้วยข้อมูลรอบด้าน', 'ไม่ต้องสนใจความเสี่ยงถ้าตอบ quiz ผ่าน'],
-    correct: 2, exp: 220, coins: 180, badgeId: 'first-portfolio' },
+  {
+    id: 'q1',
+    category: 'basic',
+    type: 'lesson',
+    icon: '🎬',
+    title: 'เรียนคลิปแรก Stock101',
+    desc: 'ไปเรียนคลิป “ทำความรู้จักหุ้นฉบับมือใหม่ - Stock101” และผ่าน Quiz หลังบทเรียน',
+    requiredLevel: 1,
+    lessonId: 'stock101-1-1',
+    exp: 120,
+    coins: 80,
+    badgeId: 'first-step',
+  },
+  {
+    id: 'q4',
+    category: 'basic',
+    type: 'action',
+    icon: '🍎',
+    title: 'ให้อาหารน้องบัว 1 ครั้ง',
+    desc: 'ซื้ออาหารในร้านค้าเพื่อเพิ่มความสุขหรือพลังงานให้น้องบัว',
+    requiredLevel: 1,
+    exp: 50,
+    coins: 30,
+  },
+  {
+    id: 'q6',
+    category: 'investment',
+    type: 'trade',
+    icon: '📈',
+    title: 'ซื้อหุ้นใน Simulation 1 ตัว',
+    desc: 'ปลดล็อก Portfolio Simulation แล้วลองซื้อหุ้นจำลอง 1 รายการ',
+    requiredLevel: 10,
+    prerequisiteLessonIds: ['stock101-1-1'],
+    exp: 130,
+    coins: 90,
+    badgeId: 'first-portfolio',
+  },
+  {
+    id: 'q7',
+    category: 'basic',
+    type: 'friend',
+    icon: '🏠',
+    title: 'เยี่ยมบ้านเพื่อน 1 คน',
+    desc: 'เข้าไปดูบ้านเพื่อนและมาสคอตน้องบัวของเพื่อน 1 คน',
+    requiredLevel: 1,
+    exp: 70,
+    coins: 40,
+    badgeId: 'friend',
+  },
 ];
 
 const PORTFOLIO_UNLOCK = FEATURE_UNLOCKS.find(f => f.id === 'portfolio')!;
@@ -378,7 +366,7 @@ function getPortfolioChecklist(player: PlayerProgress) {
   });
   const lessonItems = (PORTFOLIO_UNLOCK.requiredLessonIds ?? []).map(id => ({
     id,
-    label: `เรียนบท "${QUESTS.find(q => q.lessonId === id)?.title ?? id}"`,
+    label: `เรียนบทเรียน "${STOCK101_LESSONS.find(lesson => lesson.id === id)?.title ?? QUESTS.find(q => q.lessonId === id)?.title ?? id}"`,
     done: player.completedLessonIds.includes(id),
     actionQuestId: QUESTS.find(q => q.lessonId === id)?.id,
   }));
@@ -1087,7 +1075,7 @@ export default function App() {
     if (!hasQuestPrerequisites(q)) return 'locked';
     if (player.claimedRewardIds.includes(q.id)) return 'done';
     if (player.completedQuestIds.includes(q.id)) return 'reward';
-    if (q.lessonId && player.completedLessonIds.includes(q.lessonId)) return 'in-progress';
+    if (q.lessonId && player.completedLessonIds.includes(q.lessonId)) return q.lesson ? 'in-progress' : 'reward';
     return 'available';
   };
 
@@ -1113,7 +1101,7 @@ export default function App() {
 
   const completeQuest = (q: Quest, correct: boolean) => {
     if (player.completedQuestIds.includes(q.id)) return;
-    if (q.type !== 'action' && q.type !== 'trade' && !correct) {
+    if (q.type !== 'action' && q.type !== 'trade' && q.type !== 'friend' && !correct) {
       setQuizState({ step: 'quiz', answer: null });
       return;
     }
@@ -1127,7 +1115,8 @@ export default function App() {
   };
 
   const claimQuestReward = (q: Quest) => {
-    if (!player.completedQuestIds.includes(q.id) || player.claimedRewardIds.includes(q.id)) return;
+    const completedByLesson = Boolean(q.lessonId && player.completedLessonIds.includes(q.lessonId));
+    if ((!player.completedQuestIds.includes(q.id) && !completedByLesson) || player.claimedRewardIds.includes(q.id)) return;
     const claimedMoneyQuestIds = new Set([
       ...player.claimedRewardIds.filter(id => MONEY_QUEST_IDS.includes(id)),
       ...(MONEY_QUEST_IDS.includes(q.id) ? [q.id] : []),
@@ -1139,6 +1128,7 @@ export default function App() {
 
     setPlayer(p => ({
       ...p,
+      completedQuestIds: p.completedQuestIds.includes(q.id) ? p.completedQuestIds : [...p.completedQuestIds, q.id],
       claimedRewardIds: [...p.claimedRewardIds, q.id],
       earnedBadgeIds: [...new Set([...p.earnedBadgeIds, ...newBadgeIds])],
     }));
@@ -1191,14 +1181,13 @@ export default function App() {
       return { ...h, [stock.sym]: { shares: tot, avgCost: (cur.avgCost * cur.shares + cost) / tot } };
     });
     setTradeHistory(hist => [{ type: 'buy', sym: stock.sym, qty, price: stock.price, time: Date.now() }, ...hist]);
-    setPlayer(p => ({ ...p, tradeCount: p.tradeCount + 1 }));
+    setPlayer(p => ({
+      ...p,
+      tradeCount: p.tradeCount + 1,
+      completedQuestIds: p.completedQuestIds.includes('q6') ? p.completedQuestIds : [...p.completedQuestIds, 'q6'],
+    }));
     if (!player.completedQuestIds.includes('q6')) {
-      setPlayer(p => ({
-        ...p,
-        completedQuestIds: [...p.completedQuestIds, 'q6'],
-        claimedRewardIds: [...p.claimedRewardIds, 'q6'],
-      }));
-      showReward(130, 90, '🎉 เควสต์ซื้อหุ้นสำเร็จ!');
+      showReward(0, 0, '🎉 ภารกิจซื้อหุ้นสำเร็จ! ไปรับรางวัลได้');
     } else { showReward(10, 5, `✅ ซื้อ ${stock.sym} ${qty} หุ้น`); }
     setSelected(null);
   };
@@ -1532,6 +1521,9 @@ export default function App() {
           return {
             ...p,
             completedLessonIds: nextCompleted,
+            completedQuestIds: lesson.id === 'stock101-1-1' && !p.completedQuestIds.includes('q1')
+              ? [...p.completedQuestIds, 'q1']
+              : p.completedQuestIds,
             lessonCount: p.lessonCount + 1,
             earnedBadgeIds: chapterCompleted ? [...new Set([...p.earnedBadgeIds, STOCK101_CHAPTER_BONUS.badgeId])] : p.earnedBadgeIds,
           };
@@ -1789,6 +1781,12 @@ export default function App() {
       if (q.type === 'trade') {
         return <button onClick={() => setScreen('invest')} className="bg-purple-500 text-white text-xs font-bold px-3 py-2 rounded-full active:scale-95">ไปเทรด</button>;
       }
+      if (q.type === 'friend') {
+        return <button onClick={() => setScreen('friends')} className="bg-pink-500 text-white text-xs font-bold px-3 py-2 rounded-full active:scale-95">ไปเยี่ยม</button>;
+      }
+      if (q.type === 'lesson' && !q.lesson) {
+        return <button onClick={() => setScreen('lessons')} className="bg-blue-500 text-white text-xs font-bold px-3 py-2 rounded-full active:scale-95">ไปเรียน</button>;
+      }
       return <button onClick={() => startQuest(q)} className="bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-bold px-3 py-2 rounded-full active:scale-95">{status === 'in-progress' ? 'ทำต่อ' : 'เริ่ม'}</button>;
     };
 
@@ -1877,7 +1875,7 @@ export default function App() {
               </div>
             ))}
           </div>
-          <button onClick={() => setScreen('quests')} className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold py-3 rounded-full shadow">ไปทำเควสต์ต่อ 📚</button>
+          <button onClick={() => setScreen('lessons')} className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold py-3 rounded-full shadow">ไปเรียนบทเรียน 📚</button>
         </div>
       );
     }
@@ -2170,6 +2168,16 @@ export default function App() {
   const FriendScreen = () => {
     const [selectedFriend, setSelectedFriend] = useState<FriendProfile | null>(null);
     const [friendTab, setFriendTab] = useState<'friends' | 'ranking'>('friends');
+    const visitFriend = (friend: FriendProfile) => {
+      setSelectedFriend(friend);
+      if (!player.completedQuestIds.includes('q7')) {
+        setPlayer(p => ({
+          ...p,
+          completedQuestIds: p.completedQuestIds.includes('q7') ? p.completedQuestIds : [...p.completedQuestIds, 'q7'],
+        }));
+        showReward(0, 0, '🏠 ภารกิจเยี่ยมบ้านเพื่อนสำเร็จ! ไปรับรางวัลได้');
+      }
+    };
 
     if (selectedFriend) {
       const friendEvoStage = getEvolutionStage(selectedFriend.level);
@@ -2321,7 +2329,7 @@ export default function App() {
               return (
                 <button
                   key={entry.id}
-                  onClick={() => friend && setSelectedFriend(friend)}
+                  onClick={() => friend && visitFriend(friend)}
                   className={`w-full rounded-3xl p-3 shadow-sm text-left transition border active:scale-[0.99] ${entry.isPlayer ? 'bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200' : 'bg-white border-gray-100'}`}
                 >
                   <div className="flex items-center gap-3">
@@ -2384,7 +2392,7 @@ export default function App() {
                 const friendRank = tradeRankings.find(entry => entry.id === friend.id);
 
                 return (
-                  <button key={friend.id} onClick={() => setSelectedFriend(friend)}
+                  <button key={friend.id} onClick={() => visitFriend(friend)}
                     className="w-full bg-white rounded-3xl p-3 shadow-sm text-left active:scale-[0.99] transition border border-gray-100">
                     <div className="flex items-center gap-3">
                       <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-sky-50 to-pink-50 flex items-center justify-center border border-blue-100 overflow-hidden shrink-0">
