@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  Home, BookOpen, LineChart as LineIcon, Newspaper, User, Users, Heart, Zap, Bell,
+  Home, BookOpen, LineChart as LineIcon, User, Users, Heart, Zap, Bell,
   Gift, ShoppingBag, Star, CheckCircle, X, ChevronRight, TrendingUp, TrendingDown,
   PlayCircle,
   Lock, Flame, Trophy, Target, Wallet, Clock, PieChart as PieIcon,
@@ -296,7 +296,7 @@ function getBadgeIdsForLevelAndPath(level: number, selectedInvestmentPath: Inves
 }
 
 // ============================================================
-// STATIC DATA (Quests, News, Shop, etc.)
+// STATIC DATA (Quests, Shop, etc.)
 // ============================================================
 const MONEY_QUEST_IDS = ['mq1', 'mq2', 'mq3', 'mq4', 'mq5'];
 
@@ -388,13 +388,6 @@ function getPortfolioChecklist(player: PlayerProgress) {
     ...questItems,
   ];
 }
-
-const NEWS = [
-  { id: 'n1', icon: '📈', title: 'ดอกเบี้ยขึ้น มีผลอย่างไร?', summary: 'ธนาคารกลางขึ้นดอกเบี้ย 0.25%', body: 'เมื่อดอกเบี้ยสูงขึ้น เงินฝากให้ผลตอบแทนดีขึ้น แต่หุ้นและพันธบัตรอาจราคาลด นักลงทุนระยะยาวไม่ควรตื่นตระหนก', tag: 'นโยบายการเงิน' },
-  { id: 'n2', icon: '🌏', title: 'ETF กำลังเติบโตในเอเชีย', summary: 'นักลงทุนรุ่นใหม่หันมาสนใจ ETF', body: 'ETF กลายเป็นทางเลือกยอดนิยมของ Gen Z เพราะค่าธรรมเนียมต่ำ ซื้อขายง่าย และกระจายความเสี่ยงในตัว', tag: 'เทรนด์ลงทุน' },
-  { id: 'n3', icon: '💸', title: 'เงินเฟ้อกับเงินออม', summary: 'เก็บเงินสดอย่างเดียวอาจไม่พอ', body: 'เงินเฟ้อทำให้กำลังซื้อลดลงทุกปี ถ้าฝากเงินได้ดอกเบี้ย 1% แต่เงินเฟ้อ 3% เท่ากับเงินคุณ "หาย" ไป 2% ทุกปี', tag: 'พื้นฐาน' },
-  { id: 'n4', icon: '🛡️', title: 'กองทุนสำรองฉุกเฉิน', summary: 'ก่อนลงทุนต้องมีเงินสำรอง 3-6 เดือน', body: 'ก่อนเริ่มลงทุน ควรมีเงินสำรองฉุกเฉินเท่ากับค่าใช้จ่าย 3-6 เดือน เก็บในที่ถอนได้ง่าย เช่น บัญชีออมทรัพย์ดอกเบี้ยสูง', tag: 'การวางแผน' },
-];
 
 const SHOP = [
   { id: 's1', icon: '🍎', name: 'ผลไม้สด',         price: 15,  happy: 10, energy: 5  },
@@ -1995,33 +1988,6 @@ export default function App() {
   };
 
   // ============================================================
-  // NEWS SCREEN
-  // ============================================================
-  const NewsScreen = () => (
-    <div className="pb-24 px-4 pt-4 bg-gradient-to-b from-sky-50 to-white min-h-screen">
-      <div className="font-bold text-xl text-gray-800 mb-1">ข่าวตลาด</div>
-      <div className="text-xs text-gray-500 mb-4">เรียนรู้จากเหตุการณ์การเงิน</div>
-      <div className="space-y-3">
-        {NEWS.map(n => {
-          const read = player.readNews.includes(n.id);
-          return (
-            <button key={n.id} onClick={() => setModal({ news: n })} className="w-full bg-white rounded-2xl p-4 shadow-sm text-left">
-              <div className="flex items-start gap-3">
-                <div className="text-3xl">{n.icon}</div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1"><span className="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-bold">{n.tag}</span>{read && <CheckCircle size={12} className="text-green-500"/>}</div>
-                  <div className="font-bold text-gray-800 text-sm mb-0.5">{n.title}</div>
-                  <div className="text-xs text-gray-500">{n.summary}</div>
-                </div>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-
-  // ============================================================
   // PROFILE SCREEN
   // ============================================================
   const ProfileScreen = () => {
@@ -2459,7 +2425,7 @@ export default function App() {
   // QUEST MODAL (lesson + quiz)
   // ============================================================
   const QuestModal = () => {
-    if (!modal || modal === 'shop' || modal?.news) return null;
+    if (!modal || modal === 'shop') return null;
     const q = modal as Quest;
     const isLesson = quizState.step === 'lesson' && q.lesson;
     return (
@@ -2546,44 +2512,6 @@ export default function App() {
     );
   };
 
-  // NEWS MODAL
-  const NewsModal = () => {
-    if (!modal?.news) return null;
-    const n = modal.news, read = player.readNews.includes(n.id);
-    const finishReadingNews = () => {
-      setPlayer(p => ({ ...p, readNews: [...p.readNews, n.id] }));
-      showReward(40, 30, 'อ่านข่าวเสร็จ!');
-      setModal(null);
-    };
-    const newsAction = read ? (
-      <div className="text-center text-green-500 font-bold mt-4 text-sm">✓ อ่านแล้ว</div>
-    ) : (
-      <button
-        onClick={finishReadingNews}
-        className="w-full mt-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold py-3 rounded-full shadow"
-      >
-        อ่านจบ +30 Coin +40⭐
-      </button>
-    );
-
-    return (
-      <div className="fixed inset-0 bg-black/40 z-50 flex items-end" onClick={() => setModal(null)}>
-        <div className="bg-white rounded-t-3xl w-full max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-          <div className="sticky top-0 bg-white p-4 border-b flex items-center justify-between">
-            <div className="flex items-center gap-2"><span className="text-2xl">{n.icon}</span><span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-bold">{n.tag}</span></div>
-            <button onClick={() => setModal(null)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"><X size={16}/></button>
-          </div>
-          <div className="p-4">
-            <div className="font-bold text-gray-800 text-lg mb-2">{n.title}</div>
-            <div className="text-sm text-gray-600 italic mb-3">{n.summary}</div>
-            <div className="text-sm text-gray-700 leading-relaxed">{n.body}</div>
-            {newsAction}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   // TRADE MODAL
   const TradeModal = () => {
     if (!selected) return null;
@@ -2649,7 +2577,6 @@ export default function App() {
           {screen === 'lessons' && <LessonScreen/>}
           {screen === 'quests'  && <QuestsScreen/>}
           {screen === 'invest'  && <InvestScreen/>}
-          {screen === 'news'    && <NewsScreen/>}
           {screen === 'friends' && <FriendScreen/>}
           {screen === 'profile' && <ProfileScreen/>}
         </div>
@@ -2659,14 +2586,12 @@ export default function App() {
           <NavItem id="home"    icon={Home}     label="หน้าหลัก"/>
           <NavItem id="quests"  icon={BookOpen}  label="ภารกิจ"/>
           <NavItem id="invest"  icon={LineIcon}  label="ลงทุน"/>
-          <NavItem id="news"    icon={Newspaper} label="ข่าว"/>
           <NavItem id="friends" icon={Users}     label="Friend"/>
           <NavItem id="profile" icon={User}      label="โปรไฟล์"/>
         </div>
 
         {/* Modals */}
         <ShopModal/>
-        <NewsModal/>
         <QuestModal/>
         <TradeModal/>
 
