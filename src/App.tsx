@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import type { Session } from '@supabase/supabase-js';
+import { isSupabaseConfigured, supabase } from './supabaseClient';
 import {
   Home, BookOpen, LineChart as LineIcon, User, Users, Heart, Zap, Bell,
   Gift, ShoppingBag, Star, CheckCircle, X, ChevronRight, TrendingUp, TrendingDown,
@@ -148,6 +150,19 @@ interface SavedGameState {
   holdings: Record<string, { shares: number; avgCost: number }>;
   tradeHistory: any[];
 }
+
+interface CloudProfile {
+  user_id: string;
+  display_name: string;
+  friend_code: string;
+  level: number;
+  selected_investment_path?: string | null;
+  current_evolution_stage: string;
+  coins: number;
+  updated_at?: string;
+}
+
+type SyncStatus = 'local-only' | 'loading' | 'saving' | 'synced' | 'error';
 
 // ============================================================
 // EXP SYSTEM
@@ -633,6 +648,91 @@ function saveGame(state: SavedGameState) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch { /* silent */ }
 }
 
+function createSaveState(
+  player: PlayerProgress,
+  tradingCash: number,
+  holdings: Record<string, { shares: number; avgCost: number }>,
+  tradeHistory: any[]
+): SavedGameState {
+  return { version: SAVE_VERSION, player, tradingCash, holdings, tradeHistory };
+}
+
+function generateFriendCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = 'BUA-';
+  for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
+async function loadGameFromCloud(userId: string): Promise<SavedGameState | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from('game_saves')
+    .select('save_data')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error) throw error;
+  return (data?.save_data as SavedGameState | undefined) ?? null;
+}
+
+async function saveGameToCloud(userId: string, state: SavedGameState): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase
+    .from('game_saves')
+    .upsert({
+      user_id: userId,
+      save_data: state,
+      updated_at: new Date().toISOString(),
+    });
+  if (error) throw error;
+}
+
+async function ensureCloudProfile(userId: string, email: string | undefined, state: SavedGameState): Promise<CloudProfile | null> {
+  if (!supabase) return null;
+  const { data: existing, error: selectError } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (selectError) throw selectError;
+  if (existing) return existing as CloudProfile;
+
+  const displayName = email?.split('@')[0] || 'Bua Player';
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .insert({
+        user_id: userId,
+        display_name: displayName,
+        friend_code: generateFriendCode(),
+        level: state.player.level,
+        selected_investment_path: state.player.selectedInvestmentPath ?? null,
+        current_evolution_stage: state.player.currentEvolutionStage,
+        coins: state.player.coins,
+      })
+      .select('*')
+      .single();
+    if (!error) return data as CloudProfile;
+    if (!String(error.message).toLowerCase().includes('duplicate')) throw error;
+  }
+  throw new Error('Cannot generate unique friend code. Please try again.');
+}
+
+async function syncCloudProfileSummary(userId: string, player: PlayerProgress): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase
+    .from('profiles')
+    .update({
+      level: player.level,
+      selected_investment_path: player.selectedInvestmentPath ?? null,
+      current_evolution_stage: player.currentEvolutionStage,
+      coins: player.coins,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('user_id', userId);
+  if (error) throw error;
+}
+
 // ============================================================
 // MASCOT
 // ============================================================
@@ -794,6 +894,83 @@ const InvestmentPathModal = ({ onSelect, onClose }: { onSelect: (path: Investmen
   </div>
 );
 
+const AuthScreen = ({ onLocalMode }: { onLocalMode: () => void }) => {
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+
+  const submit = async () => {
+    if (!supabase || !email || !password) return;
+    setLoading(true);
+    setMessage('');
+    const { error } = mode === 'signin'
+      ? await supabase.auth.signInWithPassword({ email, password })
+      : await supabase.auth.signUp({ email, password });
+    setLoading(false);
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+    if (mode === 'signup') {
+      setMessage('สมัครสำเร็จแล้ว ถ้า Supabase เปิด email confirmation ให้เช็กอีเมลก่อนเข้าเกมนะ');
+    }
+  };
+
+  return (
+    <div className="bg-gradient-to-br from-sky-100 via-blue-50 to-pink-50 min-h-screen flex items-center justify-center p-4">
+      <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 border border-blue-100">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-50 to-pink-50 flex items-center justify-center border border-blue-100">
+            <BuaMascot size={58} mood="happy" evolutionStage="bua-seed"/>
+          </div>
+          <div>
+            <div className="text-[10px] text-blue-500 font-black">Cloud Save Phase 1</div>
+            <div className="font-black text-2xl text-gray-800">Bua Buddy Login</div>
+            <div className="text-xs text-gray-500">ล็อกอินเพื่อเก็บข้อมูลเกมไว้บน database</div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 bg-gray-100 rounded-2xl p-1 mb-4">
+          <button onClick={() => setMode('signin')} className={`py-2 rounded-xl text-sm font-bold ${mode === 'signin' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`}>เข้าสู่ระบบ</button>
+          <button onClick={() => setMode('signup')} className={`py-2 rounded-xl text-sm font-bold ${mode === 'signup' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`}>สมัครใหม่</button>
+        </div>
+
+        <div className="space-y-3">
+          <input
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="Email"
+            type="email"
+            className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-blue-400"
+          />
+          <input
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            placeholder="Password"
+            type="password"
+            className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-blue-400"
+          />
+          <button
+            onClick={submit}
+            disabled={loading || !email || !password}
+            className={`w-full rounded-full py-3 font-black shadow ${loading || !email || !password ? 'bg-gray-200 text-gray-400' : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white active:scale-95'}`}
+          >
+            {loading ? 'กำลังเชื่อมต่อ...' : mode === 'signin' ? 'เข้าสู่เกม' : 'สร้างบัญชี'}
+          </button>
+        </div>
+
+        {message && <div className="mt-3 text-xs text-center text-orange-600 bg-orange-50 border border-orange-100 rounded-2xl p-3">{message}</div>}
+
+        <button onClick={onLocalMode} className="w-full mt-4 text-xs text-gray-500 font-bold underline">
+          เล่นแบบ local ต่อไปก่อน
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // ============================================================
 // MAIN APP
 // ============================================================
@@ -827,14 +1004,109 @@ export default function App() {
   const [showPathModal, setShowPathModal] = useState(false);
   const [pathPromptDismissed, setPathPromptDismissed] = useState(false);
   const [showDev,    setShowDev]    = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
+  const [cloudProfile, setCloudProfile] = useState<CloudProfile | null>(null);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>(isSupabaseConfigured ? 'loading' : 'local-only');
+  const [cloudLoading, setCloudLoading] = useState(isSupabaseConfigured);
+  const [localMode, setLocalMode] = useState(!isSupabaseConfigured);
 
   const dayRef = useRef(1);
+  const cloudLoadedRef = useRef(false);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!supabase) {
+      setCloudLoading(false);
+      setSyncStatus('local-only');
+      return;
+    }
+
+    let mounted = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
+      setSession(data.session);
+      setCloudLoading(false);
+      if (!data.session) setSyncStatus('local-only');
+    });
+
+    const { data: subscription } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+      setCloudProfile(null);
+      cloudLoadedRef.current = false;
+      if (nextSession) {
+        setCloudLoading(true);
+        setSyncStatus('loading');
+      } else {
+        setLocalMode(false);
+        setCloudLoading(false);
+        setSyncStatus('local-only');
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!supabase || !session || localMode) return;
+    let active = true;
+
+    const bootstrapCloudSave = async () => {
+      setCloudLoading(true);
+      setSyncStatus('loading');
+      try {
+        const fallbackState = createSaveState(player, tradingCash, holdings, tradeHistory);
+        const profile = await ensureCloudProfile(session.user.id, session.user.email, fallbackState);
+        const cloudState = await loadGameFromCloud(session.user.id);
+
+        if (!active) return;
+        if (cloudState?.version === SAVE_VERSION) {
+          setPlayer(cloudState.player);
+          setTradingCash(cloudState.tradingCash);
+          setHoldings(cloudState.holdings);
+          setTradeHistory(cloudState.tradeHistory);
+          saveGame(cloudState);
+        } else {
+          await saveGameToCloud(session.user.id, fallbackState);
+        }
+
+        if (!active) return;
+        setCloudProfile(profile);
+        cloudLoadedRef.current = true;
+        setSyncStatus('synced');
+      } catch (error) {
+        console.error('Cloud save bootstrap failed', error);
+        if (active) setSyncStatus('error');
+      } finally {
+        if (active) setCloudLoading(false);
+      }
+    };
+
+    bootstrapCloudSave();
+    return () => { active = false; };
+  }, [session?.user.id, localMode]);
 
   // --- Persist on change ---
   useEffect(() => {
-    const state: SavedGameState = { version: SAVE_VERSION, player, tradingCash, holdings, tradeHistory };
+    const state = createSaveState(player, tradingCash, holdings, tradeHistory);
     saveGame(state);
-  }, [player, tradingCash, holdings, tradeHistory]);
+
+    if (!supabase || !session || localMode || !cloudLoadedRef.current) return;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    setSyncStatus('saving');
+    saveTimerRef.current = setTimeout(async () => {
+      try {
+        await saveGameToCloud(session.user.id, state);
+        await syncCloudProfileSummary(session.user.id, player);
+        setSyncStatus('synced');
+      } catch (error) {
+        console.error('Cloud save failed', error);
+        setSyncStatus('error');
+      }
+    }, 1200);
+  }, [player, tradingCash, holdings, tradeHistory, session?.user.id, localMode]);
 
   // --- Derived ---
   const expNeeded     = getRequiredExp(player.level);
@@ -1205,6 +1477,15 @@ export default function App() {
     setPlayer(p => ({ ...p, tradeCount: p.tradeCount + 1 }));
     showReward(10, 5, `💰 ขาย ${stock.sym} ${qty} หุ้น`);
     setSelected(null);
+  };
+
+  const signOut = async () => {
+    if (supabase) await supabase.auth.signOut();
+    setSession(null);
+    setCloudProfile(null);
+    cloudLoadedRef.current = false;
+    setLocalMode(false);
+    setSyncStatus(isSupabaseConfigured ? 'local-only' : 'local-only');
   };
 
   // ============================================================
@@ -2062,6 +2343,45 @@ export default function App() {
             <div className="bg-white/15 rounded-lg p-2 text-center"><div className="text-[10px] opacity-80">สตรีค</div><div className="font-bold">{player.streak}🔥</div></div>
           </div>
         </div>
+
+        <div className="bg-white rounded-2xl p-4 shadow-sm mb-3 border border-blue-100">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="font-bold text-gray-800 text-sm">Account & Cloud Save</div>
+              <div className="text-xs text-gray-500 mt-0.5">
+                {!isSupabaseConfigured
+                  ? 'ยังไม่ได้ตั้งค่า Supabase: ตอนนี้บันทึกในเครื่องเท่านั้น'
+                  : localMode
+                  ? 'Local Mode: เล่นต่อได้ แต่ยังไม่ sync database'
+                  : session
+                  ? session.user.email
+                  : 'ยังไม่ได้เข้าสู่ระบบ'}
+              </div>
+              <div className={`text-[11px] font-bold mt-2 ${
+                syncStatus === 'synced' ? 'text-green-600' :
+                syncStatus === 'saving' || syncStatus === 'loading' ? 'text-blue-600' :
+                syncStatus === 'error' ? 'text-red-500' : 'text-gray-400'
+              }`}>
+                {syncStatus === 'synced' ? '● Cloud synced' :
+                 syncStatus === 'saving' ? '● Saving to cloud...' :
+                 syncStatus === 'loading' ? '● Loading cloud save...' :
+                 syncStatus === 'error' ? '● Cloud sync error' :
+                 '● Local save only'}
+              </div>
+              {cloudProfile?.friend_code && (
+                <div className="mt-2 inline-flex items-center gap-2 bg-blue-50 text-blue-700 rounded-full px-3 py-1 text-xs font-black">
+                  Friend ID: {cloudProfile.friend_code}
+                </div>
+              )}
+            </div>
+            {session && !localMode ? (
+              <button onClick={signOut} className="bg-gray-100 text-gray-600 text-xs font-bold px-3 py-2 rounded-full active:scale-95">Logout</button>
+            ) : isSupabaseConfigured && localMode ? (
+              <button onClick={() => setLocalMode(false)} className="bg-blue-500 text-white text-xs font-bold px-3 py-2 rounded-full active:scale-95">Login</button>
+            ) : null}
+          </div>
+        </div>
+
         {player.level >= 20 && (
           <div className="bg-white rounded-2xl p-4 shadow-sm mb-3">
             <div className="font-bold text-gray-800 text-sm mb-3 flex items-center gap-1.5"><Target size={14} className="text-blue-500"/> เส้นทางลงทุน</div>
@@ -2577,6 +2897,26 @@ export default function App() {
   // ============================================================
   // RENDER
   // ============================================================
+  if (isSupabaseConfigured && !localMode && cloudLoading) {
+    return (
+      <div className="bg-gradient-to-br from-sky-100 via-blue-50 to-pink-50 min-h-screen flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl p-6 shadow-2xl text-center w-full max-w-sm border border-blue-100">
+          <BuaMascot size={90} mood="happy" evolutionStage="bua-seed"/>
+          <div className="font-black text-gray-800 mt-3">กำลังโหลด Cloud Save...</div>
+          <div className="text-xs text-gray-500 mt-1">เชื่อมต่อบัญชีและข้อมูลเกมของคุณ</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isSupabaseConfigured && !localMode && !session) {
+    return <AuthScreen onLocalMode={() => {
+      setLocalMode(true);
+      setSyncStatus('local-only');
+      setCloudLoading(false);
+    }}/>;
+  }
+
   return (
     <div className="bg-gradient-to-br from-sky-100 via-blue-50 to-pink-50 min-h-screen flex items-center justify-center p-0 sm:p-4">
       <div className="bg-white w-full max-w-md min-h-screen sm:min-h-0 sm:h-[820px] sm:rounded-3xl shadow-2xl overflow-hidden relative">
