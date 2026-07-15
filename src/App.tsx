@@ -1550,7 +1550,7 @@ const AuthScreen = ({ onLocalMode }: { onLocalMode: () => void }) => {
         {message && <div className="mt-3 text-xs text-center text-orange-600 bg-orange-50 border border-orange-100 rounded-2xl p-3">{message}</div>}
 
         <button onClick={onLocalMode} className="w-full mt-4 text-xs text-gray-500 font-bold underline">
-          เล่นแบบ local ต่อไปก่อน
+          เล่นแบบไม่ Login
         </button>
         <div className="mt-2 text-[10px] text-center text-gray-400 leading-relaxed">
           Local Mode จะเก็บข้อมูลไว้เฉพาะ browser เครื่องนี้ และระบบเพื่อนจริง/Ranking จริงจะใช้ได้ไม่เต็มรูปแบบ
@@ -1619,7 +1619,7 @@ const IntroScreen = ({ onContinue, onLocalMode }: { onContinue: () => void; onLo
             เข้าสู่ระบบ / สมัครสมาชิก
           </button>
           <button onClick={onLocalMode} className="w-full mt-3 text-xs text-gray-500 font-bold underline">
-            เล่นแบบ local ต่อไปก่อน
+            เล่นแบบไม่ Login
           </button>
         </div>
       </div>
@@ -2461,50 +2461,57 @@ export default function App() {
 
   const DemoGuideModal = () => (
     <div className="absolute inset-0 bg-slate-900/45 backdrop-blur-sm z-[70] flex items-end sm:items-center justify-center p-3">
-      <div className="bg-white w-full max-w-md max-h-[92vh] rounded-[32px] shadow-2xl overflow-hidden border border-blue-100">
-        <div className="relative bg-gradient-to-br from-blue-500 via-indigo-500 to-pink-400 text-white p-5">
-          <button onClick={closeDemoGuide} className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/20 flex items-center justify-center active:scale-95">
+      <div className="bg-white w-full max-w-md max-h-[88vh] rounded-[28px] shadow-2xl overflow-hidden border border-blue-100">
+        <div className="relative bg-gradient-to-br from-blue-500 via-indigo-500 to-pink-400 text-white p-4">
+          <button onClick={closeDemoGuide} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 flex items-center justify-center active:scale-95">
             <X size={18}/>
           </button>
           <div className="flex items-center gap-3 pr-10">
-            <div className="w-16 h-16 rounded-3xl bg-white/20 border border-white/30 flex items-center justify-center">
-              <BuaMascot size={62} mood="happy" evolutionStage="bua-seed"/>
+            <div className="w-14 h-14 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center">
+              <BuaMascot size={54} mood="happy" evolutionStage="bua-seed"/>
             </div>
             <div>
               <div className="text-[11px] font-black opacity-85">Demo Guide</div>
-              <div className="font-black text-2xl leading-tight">แนะนำสิ่งที่ควรลอง</div>
-              <div className="text-xs opacity-90 mt-1">ลองตามนี้จะเห็น feature หลักของ Bua Buddy เร็วที่สุด</div>
+              <div className="font-black text-xl leading-tight">แนะนำสิ่งที่ควรลอง</div>
+              <div className="text-[11px] opacity-90 mt-1">ดู feature หลักของ Bua Buddy แบบเร็วที่สุด</div>
             </div>
           </div>
         </div>
 
-        <div className="p-4 bg-gradient-to-b from-white to-blue-50/40">
-          <div className="space-y-2 max-h-[56vh] overflow-y-auto pr-1">
-            {DEMO_GUIDE_ITEMS.map(({ title, desc, icon: Icon, color }, i) => (
-              <div key={title} className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 flex gap-3">
-                <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${color} text-white flex items-center justify-center shadow-sm shrink-0`}>
-                  <Icon size={18}/>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black text-blue-500">#{i + 1}</span>
-                    <div className="font-black text-gray-800 text-sm">{title}</div>
-                  </div>
-                  <div className="text-xs text-gray-500 mt-0.5 leading-relaxed">{desc}</div>
+        <div className="p-3 bg-gradient-to-b from-white to-blue-50/40">
+          <div className="space-y-2">
+            {[
+              { label: 'เริ่มเล่น', items: DEMO_GUIDE_ITEMS.slice(0, 3) },
+              { label: 'ทดลองลงทุน', items: DEMO_GUIDE_ITEMS.slice(3, 6) },
+              { label: 'เพื่อน / Ranking / Reset', items: DEMO_GUIDE_ITEMS.slice(6, 9) },
+            ].map(section => (
+              <div key={section.label} className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100">
+                <div className="text-[11px] font-black text-blue-600 mb-2">{section.label}</div>
+                <div className="space-y-1.5">
+                  {section.items.map(({ title, icon: Icon, color }, i) => (
+                    <div key={title} className="flex items-center gap-2">
+                      <div className={`w-7 h-7 rounded-xl bg-gradient-to-br ${color} text-white flex items-center justify-center shrink-0`}>
+                        <Icon size={13}/>
+                      </div>
+                      <div className="text-xs font-bold text-gray-700 leading-snug">
+                        {DEMO_GUIDE_ITEMS.indexOf(section.items[i]) + 1}. {title}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            <button onClick={() => { closeDemoGuide(); setScreen('lessons'); }} className="rounded-full py-3 text-sm font-black bg-blue-50 text-blue-600 active:scale-95">
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button onClick={() => { closeDemoGuide(); setScreen('lessons'); }} className="rounded-full py-2.5 text-sm font-black bg-blue-50 text-blue-600 active:scale-95">
               เริ่มที่บทเรียน
             </button>
-            <button onClick={closeDemoGuide} className="rounded-full py-3 text-sm font-black bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow active:scale-95">
+            <button onClick={closeDemoGuide} className="rounded-full py-2.5 text-sm font-black bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow active:scale-95">
               เข้าใจแล้ว
             </button>
           </div>
-          <div className="text-[10px] text-gray-400 text-center mt-3">
+          <div className="text-[10px] text-gray-400 text-center mt-2">
             อ่านซ้ำได้จากปุ่ม “Demo” บนหน้า Home
           </div>
         </div>
@@ -2521,10 +2528,10 @@ export default function App() {
     return (
       <div className="pb-24">
         {/* Header */}
-        <div className="px-4 pt-4 pb-3 bg-gradient-to-b from-sky-100 to-sky-50">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-14 h-14 rounded-full bg-white shadow-md flex items-center justify-center border-2 border-red-400 overflow-hidden">
-              <BuaMascot size={52} stage={mascotStage} evolutionStage={evoStage} investmentPath={player.selectedInvestmentPath} imageOverride={mascotImageOverride} imageScale={mascotImageScale} imageOffsetX={profileMascotImageOffset.x} imageOffsetY={profileMascotImageOffset.y}/>
+        <div className="px-3 pt-3 pb-2 bg-gradient-to-b from-sky-100 to-sky-50">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center border-2 border-red-400 overflow-hidden">
+              <BuaMascot size={46} stage={mascotStage} evolutionStage={evoStage} investmentPath={player.selectedInvestmentPath} imageOverride={mascotImageOverride} imageScale={mascotImageScale} imageOffsetX={profileMascotImageOffset.x} imageOffsetY={profileMascotImageOffset.y}/>
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
@@ -2538,19 +2545,19 @@ export default function App() {
               </div>
               <div className="text-[10px] text-gray-500 mt-0.5">EXP {player.currentExp} / {expNeeded}</div>
             </div>
-            <div className="flex items-center gap-1.5 bg-white rounded-full px-3 py-1.5 shadow-md">
-              <BuaCoinIcon size={20}/>
-              <span className="font-bold text-gray-800 text-sm">{player.coins.toLocaleString()}</span>
+            <div className="flex items-center gap-1 bg-white rounded-full px-2.5 py-1.5 shadow-md">
+              <BuaCoinIcon size={18}/>
+              <span className="font-bold text-gray-800 text-xs">{player.coins.toLocaleString()}</span>
             </div>
             <button onClick={() => setShowDemoGuide(true)}
-              className="h-9 bg-white rounded-full shadow-md flex items-center gap-1.5 px-3 justify-center active:scale-95 transition">
-              <BookOpen size={15} className="text-indigo-500"/>
+              className="h-8 bg-white rounded-full shadow-md flex items-center gap-1 px-2.5 justify-center active:scale-95 transition">
+              <BookOpen size={14} className="text-indigo-500"/>
               <span className="text-[10px] font-black text-indigo-600">Demo</span>
             </button>
           </div>
 
           {/* Learning phase banner */}
-          <div className={`bg-${phaseInfo.color}-50 border border-${phaseInfo.color}-200 rounded-xl px-3 py-2 mb-3 flex items-center justify-between`}>
+          <div className={`bg-${phaseInfo.color}-50 border border-${phaseInfo.color}-200 rounded-xl px-3 py-1.5 mb-2 flex items-center justify-between`}>
             <div>
               <div className="text-[10px] text-gray-500">เฟสการเรียนรู้</div>
               <div className="font-bold text-gray-800 text-xs">{phaseInfo.name}</div>
@@ -2565,7 +2572,7 @@ export default function App() {
 
           {/* Mascot scene */}
           <div className="relative rounded-3xl overflow-hidden shadow-inner"
-            style={{ backgroundImage: `url(${sceneBgImg})`, backgroundSize: 'cover', backgroundPosition: 'center', minHeight: '260px' }}>
+            style={{ backgroundImage: `url(${sceneBgImg})`, backgroundSize: 'cover', backgroundPosition: 'center', minHeight: '218px' }}>
             <style>{`
               @keyframes mascot-bubble-bounce-stable {
                 0% { opacity: 1; transform: translateY(14px) scale(.9); }
@@ -2589,26 +2596,26 @@ export default function App() {
             )}
             <div className={`absolute ${evoStage === 'bua-saver' && !mascotImageOverride ? '-bottom-4' : evoStage === 'bua-investor' && !mascotImageOverride ? '-bottom-2' : 'bottom-2'} left-1/2 -translate-x-1/2 z-10`}
               style={{ background: 'transparent', animation: 'float 3s ease-in-out infinite' }}>
-              <BuaMascot size={160} mood={mood} stage={mascotStage} evolutionStage={evoStage} investmentPath={player.selectedInvestmentPath} imageOverride={mascotImageOverride} imageScale={mascotImageScale} imageOffsetX={mascotImageOffset.x} imageOffsetY={mascotImageOffset.y}/>
+              <BuaMascot size={140} mood={mood} stage={mascotStage} evolutionStage={evoStage} investmentPath={player.selectedInvestmentPath} imageOverride={mascotImageOverride} imageScale={mascotImageScale} imageOffsetX={mascotImageOffset.x} imageOffsetY={mascotImageOffset.y}/>
             </div>
-            <div className="absolute right-2 top-4 flex flex-col gap-1.5 z-20">
-              <button onClick={claimCheckin} className="bg-white rounded-2xl w-12 h-12 shadow-lg flex flex-col items-center justify-center relative active:scale-95 transition">
-                <Gift size={17} className="text-red-500"/><div className="text-[8px] font-bold text-gray-700">เช็คอิน</div>
+            <div className="absolute right-2 top-3 flex flex-col gap-1.5 z-20">
+              <button onClick={claimCheckin} className="bg-white rounded-2xl w-11 h-11 shadow-lg flex flex-col items-center justify-center relative active:scale-95 transition">
+                <Gift size={16} className="text-red-500"/><div className="text-[8px] font-bold text-gray-700">เช็คอิน</div>
                 {!player.checkedInToday && <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-white text-[10px] flex items-center justify-center font-bold">1</div>}
               </button>
-              <button onClick={() => setScreen('quests')} className="bg-white rounded-2xl w-12 h-12 shadow-lg flex flex-col items-center justify-center active:scale-95 transition">
-                <Target size={17} className="text-blue-500"/><div className="text-[8px] font-bold text-gray-700">ภารกิจ</div>
+              <button onClick={() => setScreen('quests')} className="bg-white rounded-2xl w-11 h-11 shadow-lg flex flex-col items-center justify-center active:scale-95 transition">
+                <Target size={16} className="text-blue-500"/><div className="text-[8px] font-bold text-gray-700">ภารกิจ</div>
               </button>
-              <button onClick={() => setScreen('friends')} className="bg-white rounded-2xl w-12 h-12 shadow-lg flex flex-col items-center justify-center active:scale-95 transition">
-                <Users size={17} className="text-pink-500"/><div className="text-[8px] font-bold text-gray-700">Friend</div>
+              <button onClick={() => setScreen('friends')} className="bg-white rounded-2xl w-11 h-11 shadow-lg flex flex-col items-center justify-center active:scale-95 transition">
+                <Users size={16} className="text-pink-500"/><div className="text-[8px] font-bold text-gray-700">Friend</div>
               </button>
-              <button onClick={() => setModal('shop')} className="bg-white rounded-2xl w-12 h-12 shadow-lg flex flex-col items-center justify-center active:scale-95 transition">
-                <ShoppingBag size={17} className="text-orange-500"/><div className="text-[8px] font-bold text-gray-700">ร้านค้า</div>
+              <button onClick={() => setModal('shop')} className="bg-white rounded-2xl w-11 h-11 shadow-lg flex flex-col items-center justify-center active:scale-95 transition">
+                <ShoppingBag size={16} className="text-orange-500"/><div className="text-[8px] font-bold text-gray-700">ร้านค้า</div>
               </button>
             </div>
           </div>
 
-          <div className="flex gap-2 mt-3">
+          <div className="flex gap-2 mt-2">
             <StatPill icon={Heart} color="text-pink-500"   label="ความสุข"  value={player.happy}  max={100}/>
             <StatPill icon={Zap}   color="text-yellow-500" label="พลังงาน"  value={player.energy} max={100}/>
             <div className="flex items-center gap-1.5 bg-white rounded-xl px-2.5 py-1.5 shadow-sm flex-1">
@@ -2619,17 +2626,17 @@ export default function App() {
         </div>
 
         {/* Next quest card */}
-        <div className="mx-4 mt-4 bg-white rounded-2xl p-4 shadow-md">
-          <div className="flex items-center justify-between mb-3">
+        <div className="mx-3 mt-3 bg-white rounded-2xl p-3 shadow-md">
+          <div className="flex items-center justify-between mb-2">
             <div className="font-bold text-gray-800 text-sm">ภารกิจวันนี้</div>
             <button onClick={() => setScreen('quests')} className="text-xs text-blue-500 flex items-center gap-1 font-medium">ดูทั้งหมด <ChevronRight size={14}/></button>
           </div>
           {nextQuest ? (
             <div className="flex items-center gap-3">
-              <div className="text-3xl">{nextQuest.icon}</div>
+              <div className="text-2xl">{nextQuest.icon}</div>
               <div className="flex-1">
                 <div className="font-bold text-gray-800 text-sm">{nextQuest.title}</div>
-                <div className="text-xs text-gray-500 mb-1">{nextQuest.desc}</div>
+                <div className="text-[11px] text-gray-500 mb-1 line-clamp-1">{nextQuest.desc}</div>
                 <div className="flex items-center gap-2 text-[11px]">
                   <span className="bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full font-bold">⭐ +{nextQuest.exp}</span>
                   <span className="bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full font-bold inline-flex items-center gap-1"><BuaCoinIcon size={12}/> +{nextQuest.coins}</span>
@@ -2647,23 +2654,23 @@ export default function App() {
         </div>
 
         {/* Lesson card */}
-        <div className="mx-4 mt-3">
-          <button onClick={() => setScreen('lessons')} className="w-full bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-4 shadow-md text-left text-white overflow-hidden relative">
+        <div className="mx-3 mt-2.5">
+          <button onClick={() => setScreen('lessons')} className="w-full bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-3 shadow-md text-left text-white overflow-hidden relative">
             <div className="absolute -right-5 -bottom-8 text-8xl opacity-15">📘</div>
             <div className="relative flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center">
-                <PlayCircle size={26}/>
+              <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center">
+                <PlayCircle size={23}/>
               </div>
               <div className="flex-1">
                 <div className="text-[10px] opacity-80 font-bold">Bua Learning Journey</div>
-                <div className="font-black text-base">บทที่ 1: พื้นฐานการลงทุนในหุ้น 101</div>
+                <div className="font-black text-sm">บทที่ 1: พื้นฐานการลงทุนในหุ้น 101</div>
                 <div className="text-xs opacity-80 mt-0.5">
                   เรียนผ่านวิดีโอ 5 คลิป + Quiz หลังคลิป
                 </div>
               </div>
               <ChevronRight size={18} className="opacity-80"/>
             </div>
-            <div className="relative mt-3 h-2 bg-white/20 rounded-full overflow-hidden">
+            <div className="relative mt-2 h-1.5 bg-white/20 rounded-full overflow-hidden">
               <div className="h-full bg-white rounded-full transition-all duration-700"
                 style={{ width: `${(STOCK101_LESSONS.filter(l => player.completedLessonIds.includes(l.id)).length / STOCK101_LESSONS.length) * 100}%` }}/>
             </div>
@@ -2674,22 +2681,22 @@ export default function App() {
         </div>
 
         {/* Portfolio card */}
-        <div className="mx-4 mt-3">
+        <div className="mx-3 mt-2.5">
           {portfolioUnlocked ? (
-            <button onClick={() => setScreen('invest')} className="w-full bg-white rounded-2xl p-4 shadow-md text-left">
-              <div className="font-bold text-gray-800 text-sm mb-2">พอร์ตลงทุนของฉัน</div>
-              <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-3 flex items-center gap-3">
+            <button onClick={() => setScreen('invest')} className="w-full bg-white rounded-2xl p-3 shadow-md text-left">
+              <div className="font-bold text-gray-800 text-sm mb-1.5">พอร์ตลงทุนของฉัน</div>
+              <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-2.5 flex items-center gap-3">
                 <div className="flex-1"><div className="text-[10px] text-gray-500">มูลค่ารวม</div><div className="font-bold text-lg text-gray-800">{fmt(totalValue, 0)} <span className="text-xs text-gray-500">บาท</span></div></div>
                 <div className="text-right"><div className="text-[10px] text-gray-500">Return รวม</div><div className={`font-bold text-sm ${playerTradingReturnPct >= 0 ? 'text-green-500' : 'text-red-500'}`}>{playerTradingReturnPct >= 0 ? '+' : ''}{fmt(playerTradingReturnPct)}%</div></div>
                 <ChevronRight size={16} className="text-gray-400"/>
               </div>
             </button>
           ) : (
-            <div className="bg-white rounded-2xl p-4 shadow-md">
+            <div className="bg-white rounded-2xl p-3 shadow-md">
               <div className="flex items-center gap-2 mb-2">
                 <Lock size={16} className="text-gray-400"/><div className="font-bold text-gray-500 text-sm">พอร์ตจำลอง</div>
               </div>
-              <div className="bg-gray-50 rounded-xl p-3">
+              <div className="bg-gray-50 rounded-xl p-2.5">
                 <div className="text-xs text-gray-500 mb-2">ต้องการเพื่อปลดล็อก</div>
                 {portfolioChecklist.slice(0, 4).map((c, i) => (
                   <div key={i} className="flex items-center gap-2 text-xs mb-1">
