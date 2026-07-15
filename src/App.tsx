@@ -2460,40 +2460,40 @@ export default function App() {
   );
 
   const DemoGuideModal = () => (
-    <div className="absolute inset-0 bg-slate-900/45 backdrop-blur-sm z-[70] flex items-end sm:items-center justify-center p-3">
-      <div className="bg-white w-full max-w-md max-h-[88vh] rounded-[28px] shadow-2xl overflow-hidden border border-blue-100">
-        <div className="relative bg-gradient-to-br from-blue-500 via-indigo-500 to-pink-400 text-white p-4">
+    <div className="absolute inset-0 bg-slate-900/45 backdrop-blur-sm z-[70] flex items-center justify-center p-3 pb-20 sm:pb-3">
+      <div className="bg-white w-full max-w-md max-h-[78vh] sm:max-h-[88vh] rounded-[28px] shadow-2xl overflow-hidden border border-blue-100 flex flex-col -translate-y-4 sm:translate-y-0">
+        <div className="relative bg-gradient-to-br from-blue-500 via-indigo-500 to-pink-400 text-white p-3.5 shrink-0">
           <button onClick={closeDemoGuide} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 flex items-center justify-center active:scale-95">
             <X size={18}/>
           </button>
           <div className="flex items-center gap-3 pr-10">
-            <div className="w-14 h-14 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center">
-              <BuaMascot size={54} mood="happy" evolutionStage="bua-seed"/>
+            <div className="w-12 h-12 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center">
+              <BuaMascot size={48} mood="happy" evolutionStage="bua-seed"/>
             </div>
             <div>
               <div className="text-[11px] font-black opacity-85">Demo Guide</div>
-              <div className="font-black text-xl leading-tight">แนะนำสิ่งที่ควรลอง</div>
+              <div className="font-black text-lg leading-tight">แนะนำสิ่งที่ควรลอง</div>
               <div className="text-[11px] opacity-90 mt-1">ดู feature หลักของ Bua Buddy แบบเร็วที่สุด</div>
             </div>
           </div>
         </div>
 
-        <div className="p-3 bg-gradient-to-b from-white to-blue-50/40">
+        <div className="p-3 bg-gradient-to-b from-white to-blue-50/40 overflow-y-auto">
           <div className="space-y-2">
             {[
               { label: 'เริ่มเล่น', items: DEMO_GUIDE_ITEMS.slice(0, 3) },
               { label: 'ทดลองลงทุน', items: DEMO_GUIDE_ITEMS.slice(3, 6) },
               { label: 'เพื่อน / Ranking / Reset', items: DEMO_GUIDE_ITEMS.slice(6, 9) },
             ].map(section => (
-              <div key={section.label} className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100">
-                <div className="text-[11px] font-black text-blue-600 mb-2">{section.label}</div>
-                <div className="space-y-1.5">
+              <div key={section.label} className="bg-white rounded-2xl p-2.5 shadow-sm border border-gray-100">
+                <div className="text-[11px] font-black text-blue-600 mb-1.5">{section.label}</div>
+                <div className="space-y-1">
                   {section.items.map(({ title, icon: Icon, color }, i) => (
                     <div key={title} className="flex items-center gap-2">
-                      <div className={`w-7 h-7 rounded-xl bg-gradient-to-br ${color} text-white flex items-center justify-center shrink-0`}>
-                        <Icon size={13}/>
+                      <div className={`w-6 h-6 rounded-xl bg-gradient-to-br ${color} text-white flex items-center justify-center shrink-0`}>
+                        <Icon size={12}/>
                       </div>
-                      <div className="text-xs font-bold text-gray-700 leading-snug">
+                      <div className="text-[11px] font-bold text-gray-700 leading-snug">
                         {DEMO_GUIDE_ITEMS.indexOf(section.items[i]) + 1}. {title}
                       </div>
                     </div>
