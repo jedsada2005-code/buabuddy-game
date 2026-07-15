@@ -1510,6 +1510,19 @@ const AuthScreen = ({ onLocalMode }: { onLocalMode: () => void }) => {
           <button onClick={() => setMode('signup')} className={`py-2 rounded-xl text-sm font-bold ${mode === 'signup' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`}>สมัครใหม่</button>
         </div>
 
+        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-3 mb-4">
+          <div className="font-black text-blue-700 text-sm mb-1">Login เพื่อเล่นได้เต็มระบบ</div>
+          {mode === 'signup' ? (
+            <div className="text-[11px] text-blue-700 leading-relaxed">
+              สมัครง่าย ๆ: กรอก Email และ Password → กดสร้างบัญชี → ถ้ามีอีเมลยืนยัน ให้กดยืนยันก่อนกลับมา Login
+            </div>
+          ) : (
+            <div className="text-[11px] text-blue-700 leading-relaxed">
+              Cloud Save ไม่หายง่าย, เล่นต่อได้หลายเครื่อง, เพิ่มเพื่อนจริงด้วย Friend ID และดู Ranking กับเพื่อนจริงได้
+            </div>
+          )}
+        </div>
+
         <div className="space-y-3">
           <input
             value={email}
@@ -1539,6 +1552,9 @@ const AuthScreen = ({ onLocalMode }: { onLocalMode: () => void }) => {
         <button onClick={onLocalMode} className="w-full mt-4 text-xs text-gray-500 font-bold underline">
           เล่นแบบ local ต่อไปก่อน
         </button>
+        <div className="mt-2 text-[10px] text-center text-gray-400 leading-relaxed">
+          Local Mode จะเก็บข้อมูลไว้เฉพาะ browser เครื่องนี้ และระบบเพื่อนจริง/Ranking จริงจะใช้ได้ไม่เต็มรูปแบบ
+        </div>
       </div>
     </div>
   );
