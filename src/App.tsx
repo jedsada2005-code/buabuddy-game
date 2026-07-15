@@ -203,8 +203,10 @@ type SyncStatus = 'local-only' | 'loading' | 'saving' | 'synced' | 'error';
 // ============================================================
 // EXP SYSTEM
 // ============================================================
-const SAVE_VERSION = 1;
-const INITIAL_TRADING_CASH = 100000;
+const SAVE_VERSION = 2;
+const LEGACY_INITIAL_TRADING_CASH = 100000;
+const INITIAL_TRADING_CASH = 1000000;
+const MOCK_USD_THB_RATE = 35.5;
 
 function calcTradingReturnPct(portfolioValue: number, initialCapital = INITIAL_TRADING_CASH): number {
   return initialCapital > 0 ? ((portfolioValue - initialCapital) / initialCapital) * 100 : 0;
@@ -820,9 +822,11 @@ const buildMarketStocks = (tick = getMarketTick()) =>
     const range = ASSET_VOLATILITY_RANGE[s.volatility];
     const drift = s.risk === 'Defensive' ? 0.04 : s.risk === 'Growth' ? 0.08 : s.risk === 'Aggressive' ? 0.12 : 0.06;
     const changePct = seededRange(`${s.sym}-${tick}-change`, -range, range) + drift;
+    const price = s.base * (1 + changePct / 100);
     return {
       ...s,
-      price: s.base * (1 + changePct / 100),
+      price,
+      thbPrice: s.currency === 'USD' ? price * MOCK_USD_THB_RATE : price,
       changePct,
       spark: genSpark(s.base, 20, `${s.sym}-${tick}`, s.volatility),
       marketTick: tick,
@@ -830,6 +834,14 @@ const buildMarketStocks = (tick = getMarketTick()) =>
   });
 
 const fmt = (n: number, d = 2) => n.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+const getAssetThbPrice = (asset: any) => asset?.thbPrice ?? asset?.price ?? 0;
+const getHoldingAvgCostThb = (holding: { avgCost: number }, asset: any) => {
+  const thbPrice = getAssetThbPrice(asset);
+  if (asset?.currency === 'USD' && holding.avgCost < thbPrice * 0.5) {
+    return holding.avgCost * MOCK_USD_THB_RATE;
+  }
+  return holding.avgCost;
+};
 
 // ============================================================
 // LOCALSTORAGE HELPERS
@@ -860,13 +872,34 @@ function createDefaultPlayer(): PlayerProgress {
   };
 }
 
+function migrateSavedGameState(state: SavedGameState | null | undefined): SavedGameState | null {
+  if (!state?.player) return null;
+
+  const safeState: SavedGameState = {
+    ...state,
+    holdings: state.holdings ?? {},
+    tradeHistory: state.tradeHistory ?? [],
+  };
+
+  if (safeState.version === SAVE_VERSION) return safeState;
+
+  if (safeState.version === 1) {
+    return {
+      ...safeState,
+      version: SAVE_VERSION,
+      tradingCash: (safeState.tradingCash ?? LEGACY_INITIAL_TRADING_CASH) + (INITIAL_TRADING_CASH - LEGACY_INITIAL_TRADING_CASH),
+    };
+  }
+
+  return null;
+}
+
 function loadGame(): SavedGameState | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as SavedGameState;
-    if (parsed.version !== SAVE_VERSION) return null; // version mismatch → fresh start
-    return parsed;
+    return migrateSavedGameState(parsed);
   } catch { return null; }
 }
 
@@ -1622,14 +1655,18 @@ export default function App() {
         const fallbackState = createSaveState(player, tradingCash, holdings, tradeHistory);
         const profile = await ensureCloudProfile(session.user.id, session.user.email, fallbackState);
         const cloudState = await loadGameFromCloud(session.user.id);
+        const migratedCloudState = migrateSavedGameState(cloudState);
 
         if (!active) return;
-        if (cloudState?.version === SAVE_VERSION) {
-          setPlayer(cloudState.player);
-          setTradingCash(cloudState.tradingCash);
-          setHoldings(cloudState.holdings);
-          setTradeHistory(cloudState.tradeHistory);
-          saveGame(cloudState);
+        if (migratedCloudState) {
+          setPlayer(migratedCloudState.player);
+          setTradingCash(migratedCloudState.tradingCash);
+          setHoldings(migratedCloudState.holdings);
+          setTradeHistory(migratedCloudState.tradeHistory);
+          saveGame(migratedCloudState);
+          if (cloudState?.version !== SAVE_VERSION) {
+            await saveGameToCloud(session.user.id, migratedCloudState);
+          }
         } else {
           await saveGameToCloud(session.user.id, fallbackState);
         }
@@ -1817,9 +1854,12 @@ export default function App() {
   const mascotStage   = player.level >= 30 ? 4 : player.level >= 20 ? 3 : player.level >= 10 ? 2 : 1;
 
   const holdingsValue = Object.entries(holdings).reduce((s, [sym, h]) => {
-    const st = stocks.find(x => x.sym === sym); return s + (st ? st.price * h.shares : 0);
+    const st = stocks.find(x => x.sym === sym); return s + (st ? getAssetThbPrice(st) * h.shares : 0);
   }, 0);
-  const totalCost  = Object.entries(holdings).reduce((s, [, h]) => s + h.avgCost * h.shares, 0);
+  const totalCost  = Object.entries(holdings).reduce((s, [sym, h]) => {
+    const st = stocks.find(x => x.sym === sym);
+    return s + (st ? getHoldingAvgCostThb(h, st) : h.avgCost) * h.shares;
+  }, 0);
   const totalValue = tradingCash + holdingsValue;
   const totalPnL   = holdingsValue - totalCost;
   const totalPnLPct= totalCost > 0 ? (totalPnL / totalCost) * 100 : 0;
@@ -1830,7 +1870,7 @@ export default function App() {
   const largestHoldingPct = holdingsValue > 0
     ? Math.max(...Object.entries(holdings).map(([sym, h]) => {
         const st = stocks.find(x => x.sym === sym);
-        return st ? (st.price * h.shares / holdingsValue) * 100 : 0;
+        return st ? (getAssetThbPrice(st) * h.shares / holdingsValue) * 100 : 0;
       }))
     : 0;
   const cashPct = totalValue > 0 ? (tradingCash / totalValue) * 100 : 100;
@@ -2130,15 +2170,16 @@ export default function App() {
   // TRADING
   // ============================================================
   const buyStock = (stock: any, qty: number) => {
-    const cost = stock.price * qty;
+    const cost = getAssetThbPrice(stock) * qty;
     if (cost > tradingCash) { showReward(0, 0, '💸 เงินไม่พอ!'); return; }
     setTradingCash(c => c - cost);
     setHoldings(h => {
       const cur = h[stock.sym] || { shares: 0, avgCost: 0 };
       const tot = cur.shares + qty;
-      return { ...h, [stock.sym]: { shares: tot, avgCost: (cur.avgCost * cur.shares + cost) / tot } };
+      const curAvgCost = getHoldingAvgCostThb(cur, stock);
+      return { ...h, [stock.sym]: { shares: tot, avgCost: (curAvgCost * cur.shares + cost) / tot } };
     });
-    setTradeHistory(hist => [{ type: 'buy', sym: stock.sym, qty, price: stock.price, time: Date.now() }, ...hist]);
+    setTradeHistory(hist => [{ type: 'buy', sym: stock.sym, qty, price: getAssetThbPrice(stock), quotePrice: stock.price, currency: stock.currency, time: Date.now() }, ...hist]);
     setPlayer(p => ({
       ...p,
       tradeCount: p.tradeCount + 1,
@@ -2153,13 +2194,13 @@ export default function App() {
   const sellStock = (stock: any, qty: number) => {
     const cur = holdings[stock.sym];
     if (!cur || cur.shares < qty) { showReward(0, 0, '❌ จำนวนสินทรัพย์ไม่พอขาย!'); return; }
-    setTradingCash(c => c + stock.price * qty);
+    setTradingCash(c => c + getAssetThbPrice(stock) * qty);
     setHoldings(h => {
       const rem = cur.shares - qty;
       if (rem === 0) { const nh = { ...h }; delete nh[stock.sym]; return nh; }
       return { ...h, [stock.sym]: { ...cur, shares: rem } };
     });
-    setTradeHistory(hist => [{ type: 'sell', sym: stock.sym, qty, price: stock.price, time: Date.now() }, ...hist]);
+    setTradeHistory(hist => [{ type: 'sell', sym: stock.sym, qty, price: getAssetThbPrice(stock), quotePrice: stock.price, currency: stock.currency, time: Date.now() }, ...hist]);
     setPlayer(p => ({ ...p, tradeCount: p.tradeCount + 1 }));
     showReward(10, 5, `💰 ขาย ${stock.sym} ${qty} หน่วย`);
     setSelected(null);
@@ -3112,6 +3153,7 @@ export default function App() {
                     <div className="text-right flex-shrink-0">
                       <div className="font-bold text-gray-800 text-sm">{fmt(s.price)}</div>
                       <div className="text-[9px] text-gray-400">{s.currency}</div>
+                      {s.currency === 'USD' && <div className="text-[9px] text-gray-400">≈ ฿{fmt(getAssetThbPrice(s), 0)}</div>}
                       <div className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${up ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>{up ? '↗ +' : '↘ '}{fmt(s.changePct)}%</div>
                     </div>
                   </button>
@@ -3126,12 +3168,13 @@ export default function App() {
               ? <div className="text-center text-gray-400 py-16"><PieIcon size={48} className="mx-auto mb-3 opacity-30"/><div className="text-sm">ยังไม่มีสินทรัพย์ในพอร์ต</div></div>
               : Object.entries(holdings).map(([sym, h]) => {
                   const st = stocks.find(s => s.sym === sym); if (!st) return null;
-                  const val = st.price * h.shares, cost2 = h.avgCost * h.shares, pnl = val - cost2, pct = (pnl/cost2)*100, up = pnl >= 0;
+                  const avgCostThb = getHoldingAvgCostThb(h, st);
+                  const val = getAssetThbPrice(st) * h.shares, cost2 = avgCostThb * h.shares, pnl = val - cost2, pct = (pnl/cost2)*100, up = pnl >= 0;
                   return (
                     <button key={sym} onClick={() => { setSelected(st); setTradeQty(1); }} className="w-full bg-white rounded-2xl p-3 shadow-sm text-left active:scale-98">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">{st.logo}</div>
-                        <div className="flex-1"><div className="font-bold text-gray-800 text-sm">{sym}</div><div className="text-[10px] text-gray-400">{h.shares} หน่วย @ {fmt(h.avgCost)}</div></div>
+                        <div className="flex-1"><div className="font-bold text-gray-800 text-sm">{sym}</div><div className="text-[10px] text-gray-400">{h.shares} หน่วย @ ฿{fmt(avgCostThb)}</div></div>
                         <div className="text-right"><div className="font-bold text-sm">{fmt(val)}</div><div className={`text-[11px] font-bold ${up ? 'text-green-600' : 'text-red-500'}`}>{up?'+':''}{fmt(pnl)} ({up?'+':''}{fmt(pct)}%)</div></div>
                       </div>
                     </button>
@@ -3146,7 +3189,7 @@ export default function App() {
               : tradeHistory.map((t, i) => (
                   <div key={i} className="bg-white rounded-xl p-3 flex items-center gap-3 shadow-sm">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${t.type==='buy' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-500'}`}>{t.type==='buy'?'ซื้อ':'ขาย'}</div>
-                    <div className="flex-1"><div className="font-bold text-sm">{t.sym}</div><div className="text-[10px] text-gray-400">{t.qty} หน่วย @ {fmt(t.price)}</div></div>
+                    <div className="flex-1"><div className="font-bold text-sm">{t.sym}</div><div className="text-[10px] text-gray-400">{t.qty} หน่วย @ ฿{fmt(t.price)}</div></div>
                     <div className="font-bold text-sm">{fmt(t.price*t.qty)}</div>
                   </div>
                 ))}
@@ -3841,6 +3884,8 @@ export default function App() {
   const TradeModal = () => {
     if (!selected) return null;
     const selectedHolding = holdings[selected.sym];
+    const selectedThbPrice = getAssetThbPrice(selected);
+    const selectedAvgCostThb = selectedHolding ? getHoldingAvgCostThb(selectedHolding, selected) : 0;
 
     return (
       <div className="absolute inset-0 bg-black/40 z-50 flex items-end" onClick={() => setSelected(null)}>
@@ -3861,6 +3906,11 @@ export default function App() {
           </div>
           <div className="bg-gray-50 rounded-2xl p-3 mb-4">
             <div className="text-2xl font-bold text-gray-800">{fmt(selected.price)} <span className="text-xs text-gray-400">{selected.currency}</span></div>
+            {selected.currency === 'USD' && (
+              <div className="text-xs font-bold text-purple-600">
+                คิดซื้อขายเป็นเงินบาท ≈ ฿{fmt(selectedThbPrice)} / หน่วย
+              </div>
+            )}
             <div className={`text-xs font-bold ${selected.changePct >= 0 ? 'text-green-600' : 'text-red-500'}`}>{selected.changePct >= 0 ? '↗ +' : '↘ '}{fmt(selected.changePct)}% รอบ 5 นาทีนี้</div>
             <div className="text-[11px] text-gray-500 mt-1">{selected.desc}</div>
             <div className="h-24 mt-1"><ResponsiveContainer><LineChart data={selected.spark}><YAxis domain={['dataMin','dataMax']} hide/><Line type="monotone" dataKey="v" stroke={selected.changePct >= 0 ? '#10B981' : '#EF4444'} strokeWidth={2} dot={false}/></LineChart></ResponsiveContainer></div>
@@ -3868,7 +3918,7 @@ export default function App() {
           {selectedHolding ? (
             <div className="bg-purple-50 rounded-xl p-2.5 mb-3 text-xs text-purple-700 flex justify-between">
               <span>ถืออยู่ {selectedHolding.shares} หน่วย</span>
-              <span>ต้นทุน {fmt(selectedHolding.avgCost)}</span>
+              <span>ต้นทุน ฿{fmt(selectedAvgCostThb)}</span>
             </div>
           ) : null}
           <div className="flex items-center justify-between mb-4">
@@ -3879,7 +3929,10 @@ export default function App() {
               <button onClick={() => setTradeQty(q => q+1)} className="w-9 h-9 rounded-full bg-gray-100 font-bold text-lg active:scale-95">+</button>
             </div>
           </div>
-          <div className="text-center text-sm text-gray-500 mb-3">รวม <span className="font-bold text-gray-800">{fmt(selected.price * tradeQty)} บาท</span></div>
+          <div className="text-center text-sm text-gray-500 mb-3">
+            รวม <span className="font-bold text-gray-800">฿{fmt(selectedThbPrice * tradeQty)}</span>
+            {selected.currency === 'USD' && <div className="text-[10px] text-gray-400">FX Mock Up: 1 USD = {fmt(MOCK_USD_THB_RATE)} บาท</div>}
+          </div>
           <div className="flex gap-3">
             <button onClick={() => sellStock(selected, tradeQty)} disabled={!selectedHolding} className={`flex-1 py-3 rounded-full font-bold ${selectedHolding ? 'bg-red-500 text-white active:scale-95' : 'bg-gray-200 text-gray-400'}`}>ขาย</button>
             <button onClick={() => buyStock(selected, tradeQty)} className="flex-1 py-3 rounded-full font-bold bg-green-500 text-white active:scale-95">ซื้อ</button>
