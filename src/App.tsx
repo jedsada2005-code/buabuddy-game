@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { isSupabaseConfigured, supabase } from './supabaseClient';
 import {
-  Home, BookOpen, LineChart as LineIcon, User, Users, Heart, Zap, Bell,
+  Home, BookOpen, LineChart as LineIcon, User, Users, Heart, Zap,
   Gift, ShoppingBag, Star, CheckCircle, X, ChevronRight, TrendingUp, TrendingDown,
   PlayCircle,
   Lock, Flame, Trophy, Target, Wallet, Clock, PieChart as PieIcon,
@@ -786,6 +786,18 @@ const ASSET_RISK_BADGE: Record<string, string> = {
   Aggressive: 'bg-red-50 text-red-500',
 };
 
+const DEMO_GUIDE_ITEMS = [
+  { title: 'ลองให้อาหารน้องบัว', desc: 'ดู popup ข้อความตอบกลับ และค่าความสุข/พลังงานที่เพิ่มขึ้น', icon: Heart, color: 'from-pink-400 to-rose-500' },
+  { title: 'ลองเรียนคลิปแรก', desc: 'ดู flow บทเรียน → Quiz → รับ EXP/Bua Coin', icon: BookOpen, color: 'from-blue-400 to-indigo-500' },
+  { title: 'ใช้ Dev Panel เพิ่ม Level', desc: 'ดูน้องบัว evolve จากร่างเริ่มต้นไปเป็นร่างถัดไป', icon: Settings, color: 'from-gray-700 to-gray-900' },
+  { title: 'เลือก Investment Path', desc: 'เช่น Value Hunter หรือ Dividend Keeper แล้วดูน้องบัวเปลี่ยนสาย', icon: Star, color: 'from-amber-400 to-orange-500' },
+  { title: 'ปลดล็อก Portfolio Simulation', desc: 'ลองซื้อสินทรัพย์จำลอง เช่น หุ้นไทย หุ้น US ETF หรือ Gold/Oil', icon: Wallet, color: 'from-purple-400 to-violet-600' },
+  { title: 'ดูสินทรัพย์ต่างประเทศ', desc: 'ราคาเป็น USD แต่ตอนซื้อขายคำนวณเป็นเงินบาท', icon: TrendingUp, color: 'from-emerald-400 to-teal-600' },
+  { title: 'เพิ่มเพื่อนด้วย Friend ID', desc: 'กดเยี่ยมบ้านเพื่อนเพื่อดู Level และมาสคอตของเพื่อน', icon: Users, color: 'from-pink-400 to-fuchsia-500' },
+  { title: 'ดู Ranking', desc: 'เปรียบเทียบ Return ของพอร์ตเรากับเพื่อน', icon: Trophy, color: 'from-yellow-400 to-amber-600' },
+  { title: 'ลอง Reset ใน Dev Panel', desc: 'กลับไปทดสอบ flow ตั้งแต่เริ่มเกมใหม่ได้เร็วขึ้น', icon: RotateCcw, color: 'from-red-400 to-red-600' },
+];
+
 const MARKET_TICK_MS = 5 * 60 * 1000;
 
 const getMarketTick = (now = Date.now()) => Math.floor(now / MARKET_TICK_MS);
@@ -1532,6 +1544,73 @@ const AuthScreen = ({ onLocalMode }: { onLocalMode: () => void }) => {
   );
 };
 
+const IntroScreen = ({ onContinue, onLocalMode }: { onContinue: () => void; onLocalMode: () => void }) => {
+  const features = [
+    { no: '1', title: 'เลี้ยงน้องบัว', desc: 'ให้อาหารเพื่อเพิ่มความสุขและพลังงาน พร้อม popup ข้อความตอบกลับ', icon: Heart, color: 'text-pink-500 bg-pink-50' },
+    { no: '2', title: 'เรียนบทเรียน', desc: 'ดูคลิปความรู้การลงทุน แล้วทำ Quiz เพื่อรับ EXP และ Bua Coin', icon: BookOpen, color: 'text-blue-500 bg-blue-50' },
+    { no: '3', title: 'พัฒนาร่าง', desc: 'Level เพิ่มแล้ว evolve จาก Bua Seed ไปสู่ Path และ Master', icon: Star, color: 'text-amber-500 bg-amber-50' },
+    { no: '4', title: 'ภารกิจ', desc: 'ทำภารกิจ เช่น เรียน ให้อาหาร ซื้อสินทรัพย์ หรือเยี่ยมเพื่อน', icon: Target, color: 'text-indigo-500 bg-indigo-50' },
+    { no: '5', title: 'Portfolio Simulation', desc: 'ทดลองลงทุนด้วยเงินจำลอง 1,000,000 บาท ราคาขยับแบบ Mock Up', icon: Wallet, color: 'text-emerald-500 bg-emerald-50' },
+    { no: '6', title: 'Friend & Ranking', desc: 'เพิ่มเพื่อนด้วย Friend ID เยี่ยมบ้าน และแข่ง Return พอร์ตจำลอง', icon: Users, color: 'text-purple-500 bg-purple-50' },
+    { no: '7', title: 'Dev Panel', desc: 'ปุ่มวงกลมสีดำมุมขวาบน ใช้เพิ่ม Level ปลดล็อก feature หรือ reset สำหรับ demo', icon: Settings, color: 'text-gray-700 bg-gray-100' },
+  ];
+
+  return (
+    <div className="bg-gradient-to-br from-sky-100 via-blue-50 to-pink-50 min-h-screen flex items-center justify-center p-4">
+      <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-blue-100 overflow-hidden">
+        <div className="relative bg-gradient-to-br from-blue-500 via-indigo-500 to-pink-400 px-6 pt-6 pb-5 text-white">
+          <div className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/85 shadow-lg flex items-center justify-center">
+            <Settings size={17} className="text-yellow-300"/>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="w-20 h-20 rounded-3xl bg-white/20 border border-white/30 flex items-center justify-center">
+              <BuaMascot size={76} mood="happy" evolutionStage="bua-seed"/>
+            </div>
+            <div className="pr-10">
+              <div className="text-[11px] font-black opacity-80">How to Play</div>
+              <div className="font-black text-3xl leading-tight">Bua Buddy</div>
+              <div className="text-xs opacity-90 mt-1">เรียนรู้การลงทุนผ่านการเลี้ยง “น้องบัว”</div>
+            </div>
+          </div>
+          <div className="mt-4 bg-white/15 rounded-2xl p-3 text-xs leading-relaxed">
+            ผู้เล่นจะเรียนบทเรียน ทำภารกิจ สะสม EXP/Bua Coin และพัฒนาน้องบัวให้เติบโตตามเส้นทางนักลงทุนของตัวเอง
+          </div>
+        </div>
+
+        <div className="p-5">
+          <div className="font-black text-gray-800 mb-3">วิธีเล่นหลัก ๆ</div>
+          <div className="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
+            {features.map(({ no, title, desc, icon: Icon, color }) => (
+              <div key={no} className="flex gap-3 p-3 rounded-2xl bg-gray-50 border border-gray-100">
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${color}`}>
+                  <Icon size={18}/>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black text-blue-500">#{no}</span>
+                    <div className="font-black text-gray-800 text-sm">{title}</div>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-0.5 leading-relaxed">{desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={onContinue}
+            className="w-full mt-5 rounded-full py-3 font-black shadow bg-gradient-to-r from-blue-500 to-indigo-600 text-white active:scale-95"
+          >
+            เข้าสู่ระบบ / สมัครสมาชิก
+          </button>
+          <button onClick={onLocalMode} className="w-full mt-3 text-xs text-gray-500 font-bold underline">
+            เล่นแบบ local ต่อไปก่อน
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ============================================================
 // MAIN APP
 // ============================================================
@@ -1558,6 +1637,7 @@ export default function App() {
   const [levelUpInfo,setLevelUpInfo]= useState<{ level: number } | null>(null);
   const [portfolioUnlockInfo, setPortfolioUnlockInfo] = useState(false);
   const [showPortfolioTutorial, setShowPortfolioTutorial] = useState(false);
+  const [showDemoGuide, setShowDemoGuide] = useState(false);
   const [evolutionInfo, setEvolutionInfo] = useState<EvolutionCutsceneState | null>(null);
   const [showPathModal, setShowPathModal] = useState(false);
   const [pathPromptDismissed, setPathPromptDismissed] = useState(false);
@@ -1567,6 +1647,7 @@ export default function App() {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>(isSupabaseConfigured ? 'loading' : 'local-only');
   const [cloudLoading, setCloudLoading] = useState(isSupabaseConfigured);
   const [localMode, setLocalMode] = useState(!isSupabaseConfigured);
+  const [showIntro, setShowIntro] = useState(true);
   const [cloudFriends, setCloudFriends] = useState<FriendProfile[]>([]);
   const [incomingFriendRequests, setIncomingFriendRequests] = useState<FriendRequestView[]>([]);
   const [outgoingFriendRequests, setOutgoingFriendRequests] = useState<FriendRequestView[]>([]);
@@ -1576,6 +1657,7 @@ export default function App() {
   const cloudLoadedRef = useRef(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const portfolioSnapshotTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const demoGuideAutoShownRef = useRef(false);
   const mascotBubbleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -1643,6 +1725,13 @@ export default function App() {
       setSelected(latestSelected);
     }
   }, [stocks, selected?.sym, selected?.marketTick]);
+
+  useEffect(() => {
+    const inGame = localMode || Boolean(session);
+    if (!inGame || showIntro || cloudLoading || screen !== 'home' || demoGuideAutoShownRef.current) return;
+    demoGuideAutoShownRef.current = true;
+    setShowDemoGuide(true);
+  }, [screen, localMode, session?.user.id, showIntro, cloudLoading]);
 
   useEffect(() => {
     if (!supabase || !session || localMode) return;
@@ -2211,7 +2300,10 @@ export default function App() {
     setSession(null);
     setCloudProfile(null);
     cloudLoadedRef.current = false;
+    demoGuideAutoShownRef.current = false;
     setLocalMode(false);
+    setShowIntro(true);
+    setShowDemoGuide(false);
     setSyncStatus(isSupabaseConfigured ? 'local-only' : 'local-only');
   };
 
@@ -2271,6 +2363,10 @@ export default function App() {
       setSyncStatus('error');
       showReward(0, 0, 'รีเซ็ตในเครื่องแล้ว แต่ Cloud Save ยังไม่สำเร็จ');
     }
+  };
+
+  const closeDemoGuide = () => {
+    setShowDemoGuide(false);
   };
 
   // ============================================================
@@ -2347,6 +2443,59 @@ export default function App() {
     </div>
   );
 
+  const DemoGuideModal = () => (
+    <div className="absolute inset-0 bg-slate-900/45 backdrop-blur-sm z-[70] flex items-end sm:items-center justify-center p-3">
+      <div className="bg-white w-full max-w-md max-h-[92vh] rounded-[32px] shadow-2xl overflow-hidden border border-blue-100">
+        <div className="relative bg-gradient-to-br from-blue-500 via-indigo-500 to-pink-400 text-white p-5">
+          <button onClick={closeDemoGuide} className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/20 flex items-center justify-center active:scale-95">
+            <X size={18}/>
+          </button>
+          <div className="flex items-center gap-3 pr-10">
+            <div className="w-16 h-16 rounded-3xl bg-white/20 border border-white/30 flex items-center justify-center">
+              <BuaMascot size={62} mood="happy" evolutionStage="bua-seed"/>
+            </div>
+            <div>
+              <div className="text-[11px] font-black opacity-85">Demo Guide</div>
+              <div className="font-black text-2xl leading-tight">แนะนำสิ่งที่ควรลอง</div>
+              <div className="text-xs opacity-90 mt-1">ลองตามนี้จะเห็น feature หลักของ Bua Buddy เร็วที่สุด</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4 bg-gradient-to-b from-white to-blue-50/40">
+          <div className="space-y-2 max-h-[56vh] overflow-y-auto pr-1">
+            {DEMO_GUIDE_ITEMS.map(({ title, desc, icon: Icon, color }, i) => (
+              <div key={title} className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 flex gap-3">
+                <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${color} text-white flex items-center justify-center shadow-sm shrink-0`}>
+                  <Icon size={18}/>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black text-blue-500">#{i + 1}</span>
+                    <div className="font-black text-gray-800 text-sm">{title}</div>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-0.5 leading-relaxed">{desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <button onClick={() => { closeDemoGuide(); setScreen('lessons'); }} className="rounded-full py-3 text-sm font-black bg-blue-50 text-blue-600 active:scale-95">
+              เริ่มที่บทเรียน
+            </button>
+            <button onClick={closeDemoGuide} className="rounded-full py-3 text-sm font-black bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow active:scale-95">
+              เข้าใจแล้ว
+            </button>
+          </div>
+          <div className="text-[10px] text-gray-400 text-center mt-3">
+            อ่านซ้ำได้จากปุ่ม “Demo” บนหน้า Home
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   // ============================================================
   // HOME SCREEN
   // ============================================================
@@ -2377,10 +2526,10 @@ export default function App() {
               <BuaCoinIcon size={20}/>
               <span className="font-bold text-gray-800 text-sm">{player.coins.toLocaleString()}</span>
             </div>
-            <button onClick={() => setPlayer(p => ({ ...p, checkedInToday: false, happy: Math.max(20, p.happy - 15), energy: Math.max(20, p.energy - 15) }))}
-              className="w-9 h-9 bg-white rounded-full shadow-md flex items-center justify-center relative">
-              <Bell size={16} className="text-gray-600"/>
-              {!player.checkedInToday && <div className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"/>}
+            <button onClick={() => setShowDemoGuide(true)}
+              className="h-9 bg-white rounded-full shadow-md flex items-center gap-1.5 px-3 justify-center active:scale-95 transition">
+              <BookOpen size={15} className="text-indigo-500"/>
+              <span className="text-[10px] font-black text-indigo-600">Demo</span>
             </button>
           </div>
 
@@ -3965,9 +4114,22 @@ export default function App() {
     );
   }
 
+  if (isSupabaseConfigured && !localMode && !session && showIntro) {
+    return <IntroScreen
+      onContinue={() => setShowIntro(false)}
+      onLocalMode={() => {
+        setLocalMode(true);
+        setShowIntro(false);
+        setSyncStatus('local-only');
+        setCloudLoading(false);
+      }}
+    />;
+  }
+
   if (isSupabaseConfigured && !localMode && !session) {
     return <AuthScreen onLocalMode={() => {
       setLocalMode(true);
+      setShowIntro(false);
       setSyncStatus('local-only');
       setCloudLoading(false);
     }}/>;
@@ -4056,6 +4218,7 @@ export default function App() {
           {showDev ? '✕' : '⚙'}
         </button>
         {showDev && <DevPanel/>}
+        {showDemoGuide && screen === 'home' && <DemoGuideModal/>}
       </div>
     </div>
   );
