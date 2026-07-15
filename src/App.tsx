@@ -355,6 +355,11 @@ function getBadgeIdsForLevelAndPath(level: number, selectedInvestmentPath: Inves
   return nextBadgeIds;
 }
 
+function shouldShowEvolutionFx(toStage: EvolutionStage, milestone: EvolutionMilestone): boolean {
+  if (milestone !== 'stage') return true;
+  return toStage === 'bua-saver' || toStage === 'bua-investor';
+}
+
 // ============================================================
 // STATIC DATA (Quests, Shop, etc.)
 // ============================================================
@@ -1435,6 +1440,67 @@ const EvolutionCutscene = ({
   );
 };
 
+const SimpleStageEvolutionCutscene = ({
+  cutscene,
+  onClose,
+  imageOverride,
+  imageScale,
+  imageOffsetX,
+  imageOffsetY,
+}: {
+  cutscene: EvolutionCutsceneState;
+  onClose: () => void;
+  imageOverride?: string;
+  imageScale?: number;
+  imageOffsetX?: number;
+  imageOffsetY?: number;
+}) => {
+  const toInfo = EVOLUTION_INFO[cutscene.toStage];
+
+  return (
+    <div className="fixed inset-0 bg-sky-950/55 z-[78] flex items-center justify-center p-4 overflow-hidden">
+      <style>{`
+        @keyframes bua-simple-glow { 0% { transform: scale(.86); opacity: 0; filter: blur(16px); } 18% { opacity: 1; } 48% { transform: scale(1.38); opacity: .95; filter: blur(2px); } 100% { transform: scale(1.72); opacity: 0; filter: blur(18px); } }
+        @keyframes bua-simple-flash { 0% { opacity: 0; } 28% { opacity: .95; } 58% { opacity: .2; } 100% { opacity: 0; } }
+        @keyframes bua-simple-pop { 0% { transform: translateY(8px) scale(.58); opacity: 0; filter: brightness(2.4) blur(8px); } 45% { transform: translateY(-8px) scale(1.08); opacity: 1; filter: brightness(1.65) blur(0); } 76% { transform: translateY(3px) scale(.98); filter: brightness(1.12); } 100% { transform: translateY(0) scale(1); opacity: 1; filter: brightness(1); } }
+        @keyframes bua-simple-card { 0% { transform: translateY(10px); opacity: 0; } 58% { transform: translateY(10px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+      `}</style>
+
+      <div className="absolute inset-0 bg-gradient-to-br from-sky-200/50 via-blue-100/35 to-pink-200/45"/>
+      <div className="relative w-full max-w-sm rounded-[2rem] bg-white/90 backdrop-blur-xl border border-white/70 shadow-2xl p-6 text-center overflow-hidden">
+        <div className="absolute left-1/2 top-[108px] w-56 h-56 -translate-x-1/2 rounded-full bg-gradient-to-br from-white via-yellow-100 to-sky-200" style={{ animation: 'bua-simple-glow 2.1s ease-out forwards' }}/>
+        <div className="absolute inset-0 bg-white pointer-events-none" style={{ animation: 'bua-simple-flash 1.35s ease-out forwards' }}/>
+
+        <div className="relative z-10">
+          <div className="text-[11px] font-black text-blue-500 mb-2">EVOLUTION</div>
+          <div className="font-black text-2xl text-gray-800">น้องบัวพัฒนาร่าง!</div>
+          <div className="mt-5 h-56 flex items-center justify-center">
+            <div style={{ animation: 'bua-simple-pop 1.65s ease-out forwards' }}>
+              <BuaMascot
+                size={190}
+                mood="happy"
+                stage={getEvolutionMascotStage(cutscene.toStage)}
+                evolutionStage={cutscene.toStage}
+                imageOverride={imageOverride}
+                imageScale={imageScale ?? 1}
+                imageOffsetX={imageOffsetX ?? 0}
+                imageOffsetY={imageOffsetY ?? 0}
+              />
+            </div>
+          </div>
+          <div style={{ animation: 'bua-simple-card 1.85s ease-out forwards' }}>
+            <div className="font-black text-xl text-blue-600">{toInfo.name}</div>
+            <div className="text-xs text-gray-500 mt-1">{toInfo.desc}</div>
+            <button onClick={onClose} className="mt-5 w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-black py-3 rounded-full shadow active:scale-95">
+              ไปต่อ ✨
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const InvestmentPathModal = ({ onSelect, onClose }: { onSelect: (path: InvestmentPath) => void; onClose: () => void }) => (
   <div className="fixed inset-0 bg-black/60 z-[77] flex items-center justify-center p-4">
     <div className="bg-white rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">
@@ -2067,12 +2133,13 @@ export default function App() {
       const gainedBadgeIds = nextBadgeIds.filter(id => !player.earnedBadgeIds.includes(id));
       const gainedPathMasterBadge = gainedBadgeIds.find(id => PATH_MASTER_BADGE_IDS.includes(id));
       const gainedInvestmentMasterBadge = gainedBadgeIds.includes(INVESTMENT_MASTER_BADGE_ID);
-      if (stageChanged || gainedPathMasterBadge || gainedInvestmentMasterBadge) {
+      const milestone: EvolutionMilestone = gainedInvestmentMasterBadge ? 'investment-master' : gainedPathMasterBadge ? 'path-master' : 'stage';
+      if ((stageChanged || gainedPathMasterBadge || gainedInvestmentMasterBadge) && shouldShowEvolutionFx(nextEvolutionStage, milestone)) {
         setEvolutionInfo({
           fromStage: player.currentEvolutionStage,
           toStage: nextEvolutionStage,
           investmentPath: player.selectedInvestmentPath,
-          milestone: gainedInvestmentMasterBadge ? 'investment-master' : gainedPathMasterBadge ? 'path-master' : 'stage',
+          milestone,
         });
       }
       setPlayer(p => ({
@@ -2109,12 +2176,13 @@ export default function App() {
         .map(f => f.id);
 
       if (leveled) setLevelUpInfo({ level });
-      if (nextEvolutionStage !== p.currentEvolutionStage || gainedPathMasterBadge || gainedInvestmentMasterBadge) {
+      const milestone: EvolutionMilestone = gainedInvestmentMasterBadge ? 'investment-master' : gainedPathMasterBadge ? 'path-master' : 'stage';
+      if ((nextEvolutionStage !== p.currentEvolutionStage || gainedPathMasterBadge || gainedInvestmentMasterBadge) && shouldShowEvolutionFx(nextEvolutionStage, milestone)) {
         setEvolutionInfo({
           fromStage: p.currentEvolutionStage,
           toStage: nextEvolutionStage,
           investmentPath: p.selectedInvestmentPath,
-          milestone: gainedInvestmentMasterBadge ? 'investment-master' : gainedPathMasterBadge ? 'path-master' : 'stage',
+          milestone,
         });
       }
       return {
@@ -2403,7 +2471,20 @@ export default function App() {
         <button onClick={() => setPlayer(p => {
           const level = p.level + 5;
           const earnedBadgeIds = getBadgeIdsForLevelAndPath(level, p.selectedInvestmentPath, p.earnedBadgeIds);
-          return { ...p, level, earnedBadgeIds, currentExp: 0, currentEvolutionStage: getPlayerEvolutionStage({ ...p, level, earnedBadgeIds }) };
+          const nextEvolutionStage = getPlayerEvolutionStage({ ...p, level, earnedBadgeIds });
+          const gainedBadgeIds = earnedBadgeIds.filter(id => !p.earnedBadgeIds.includes(id));
+          const gainedPathMasterBadge = gainedBadgeIds.find(id => PATH_MASTER_BADGE_IDS.includes(id));
+          const gainedInvestmentMasterBadge = gainedBadgeIds.includes(INVESTMENT_MASTER_BADGE_ID);
+          const milestone: EvolutionMilestone = gainedInvestmentMasterBadge ? 'investment-master' : gainedPathMasterBadge ? 'path-master' : 'stage';
+          if ((nextEvolutionStage !== p.currentEvolutionStage || gainedPathMasterBadge || gainedInvestmentMasterBadge) && shouldShowEvolutionFx(nextEvolutionStage, milestone)) {
+            setEvolutionInfo({
+              fromStage: p.currentEvolutionStage,
+              toStage: nextEvolutionStage,
+              investmentPath: p.selectedInvestmentPath,
+              milestone,
+            });
+          }
+          return { ...p, level, earnedBadgeIds, currentExp: 0, currentEvolutionStage: nextEvolutionStage };
         })} className="w-full mb-1 bg-green-600 rounded-lg py-1 active:scale-95">+5 Level</button>
         <button onClick={() => setPlayer(p => {
           const level = 10;
@@ -4207,7 +4288,16 @@ export default function App() {
           <PortfolioTutorialModal onClose={() => { setShowPortfolioTutorial(false); setScreen('invest'); }}/>
         )}
 
-        {evolutionInfo && (
+        {evolutionInfo && evolutionInfo.milestone === 'stage' && ['bua-saver', 'bua-investor'].includes(evolutionInfo.toStage) ? (
+          <SimpleStageEvolutionCutscene
+            cutscene={evolutionInfo}
+            onClose={() => setEvolutionInfo(null)}
+            imageOverride={mascotImageOverride}
+            imageScale={mascotImageScale}
+            imageOffsetX={modalMascotImageOffset.x}
+            imageOffsetY={modalMascotImageOffset.y}
+          />
+        ) : evolutionInfo && (
           <EvolutionCutscene
             cutscene={evolutionInfo}
             onClose={() => setEvolutionInfo(null)}
