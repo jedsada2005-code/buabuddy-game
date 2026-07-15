@@ -19,7 +19,7 @@ const BUA_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/m
 const BUA_SEED_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/bua-seed1.png';
 const BUA_SAVER_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/Bua%20Saver%20%281%29.png';
 const BUA_INVESTOR_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/Bua%20Investor%20%282%29.png';
-const VALUE_HUNTER_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/value%20hunter.png';
+const VALUE_HUNTER_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/Bua%20%20Hunter%20.png';
 const GLOBAL_EXPLORER_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/global%20exploer.png';
 const RISK_GUARDIAN_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/risk%20gardian.png';
 const DIVIDEND_KEEPER_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/dividend%20keeper.png';
@@ -1214,14 +1214,16 @@ const BuaMascot = ({ size = 180, mood = 'happy', stage = 1, evolutionStage, inve
   const stageImageScale = evolutionStage === 'bua-saver' && !imageOverride ? 2.25
     : evolutionStage === 'bua-investor' && !imageOverride ? 2.25
     : 1;
+  const pathImageScale = investmentPath === 'value-hunter' && !imageOverride ? 2.5 : 1;
   const stageOffsetY = evolutionStage === 'bua-saver' && !imageOverride ? size * 0.42
     : evolutionStage === 'bua-investor' && !imageOverride ? size * 0.48
     : 0;
+  const pathOffsetY = investmentPath === 'value-hunter' && !imageOverride ? size * 0.70 : 0;
   return (
   <div style={{ width: size, height: size, position: 'relative', display: 'inline-block', background: 'transparent' }}>
     <img src={imageSrc} alt="Bua Buddy"
       style={{ width: '100%', height: '100%', objectFit: 'contain',
-        transform: `translate(${imageOffsetX}px, ${imageOffsetY + stageOffsetY}px) scale(${imageScale * stageImageScale})`, transformOrigin: 'center bottom',
+        transform: `translate(${imageOffsetX}px, ${imageOffsetY + stageOffsetY + pathOffsetY}px) scale(${imageScale * stageImageScale * pathImageScale})`, transformOrigin: 'center bottom',
         filter: mood === 'sad' ? 'grayscale(40%) brightness(0.85)' : 'none', transition: 'filter 0.3s' }} />
     {mood === 'happy' && <>
       <div style={{ position: 'absolute', top: '10%', left:  '0%', fontSize: size * 0.11 }}>✨</div>
