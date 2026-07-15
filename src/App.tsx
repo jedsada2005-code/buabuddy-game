@@ -2019,6 +2019,14 @@ export default function App() {
     : player.selectedInvestmentPath === 'value-hunter' && selectedPathMasterAssets
     ? { x: -11, y: 200 }
     : profileMascotImageOffset;
+  const evolutionFxImageScale = isInvestmentMaster ? 1.0
+    : selectedPathMasterAssets ? 1.72
+    : mascotImageScale;
+  const evolutionFxImageOffset = isInvestmentMaster
+    ? { x: 0, y: 0 }
+    : selectedPathMasterAssets
+    ? { x: 0, y: 10 }
+    : modalMascotImageOffset;
   const sceneBgImg    = evoStage === 'investment-master' ? BG_MASTER_IMG : selectedPathMasterAssets?.background ?? BG_IMG;
   const selectedPathInfo = player.selectedInvestmentPath ? INVESTMENT_PATHS[player.selectedInvestmentPath] : null;
   const mood          = player.happy < 30 || player.energy < 30 ? 'sad' : 'happy';
@@ -4293,18 +4301,18 @@ export default function App() {
             cutscene={evolutionInfo}
             onClose={() => setEvolutionInfo(null)}
             imageOverride={mascotImageOverride}
-            imageScale={mascotImageScale}
-            imageOffsetX={modalMascotImageOffset.x}
-            imageOffsetY={modalMascotImageOffset.y}
+            imageScale={evolutionFxImageScale}
+            imageOffsetX={evolutionFxImageOffset.x}
+            imageOffsetY={evolutionFxImageOffset.y}
           />
         ) : evolutionInfo && (
           <EvolutionCutscene
             cutscene={evolutionInfo}
             onClose={() => setEvolutionInfo(null)}
             imageOverride={mascotImageOverride}
-            imageScale={mascotImageScale}
-            imageOffsetX={modalMascotImageOffset.x}
-            imageOffsetY={modalMascotImageOffset.y}
+            imageScale={evolutionFxImageScale}
+            imageOffsetX={evolutionFxImageOffset.x}
+            imageOffsetY={evolutionFxImageOffset.y}
             investmentPath={player.selectedInvestmentPath}
           />
         )}
