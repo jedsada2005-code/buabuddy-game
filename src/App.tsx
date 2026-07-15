@@ -2460,8 +2460,14 @@ export default function App() {
   );
 
   const DemoGuideModal = () => (
-    <div className="absolute inset-0 bg-slate-900/45 backdrop-blur-sm z-[70] flex items-center justify-center p-3 pb-20 sm:pb-3">
-      <div className="bg-white w-full max-w-md max-h-[78vh] sm:max-h-[88vh] rounded-[28px] shadow-2xl overflow-hidden border border-blue-100 flex flex-col -translate-y-4 sm:translate-y-0">
+    <div
+      className="fixed inset-0 bg-slate-900/45 backdrop-blur-sm z-[120] flex items-start justify-center px-3"
+      style={{
+        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 76px)',
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 120px)',
+      }}
+    >
+      <div className="bg-white w-full max-w-md max-h-[62vh] sm:max-h-[88vh] rounded-[28px] shadow-2xl overflow-hidden border border-blue-100 flex flex-col">
         <div className="relative bg-gradient-to-br from-blue-500 via-indigo-500 to-pink-400 text-white p-3.5 shrink-0">
           <button onClick={closeDemoGuide} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 flex items-center justify-center active:scale-95">
             <X size={18}/>
