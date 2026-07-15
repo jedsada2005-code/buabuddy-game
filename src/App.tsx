@@ -17,8 +17,8 @@ import {
 // ============================================================
 const BUA_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/Buabuddy__1_-removebg-preview.png';
 const BUA_SEED_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/bua-seed1.png';
-const BUA_SAVER_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/bua%20saver.png';
-const BUA_INVESTOR_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/bua%20investor.png';
+const BUA_SAVER_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/Bua%20Saver%20%281%29.png';
+const BUA_INVESTOR_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/Bua%20Investor%20%282%29.png';
 const VALUE_HUNTER_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/value%20hunter.png';
 const GLOBAL_EXPLORER_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/global%20exploer.png';
 const RISK_GUARDIAN_IMG = 'https://raw.githubusercontent.com/jedsada2005-code/bua-assets/main/risk%20gardian.png';
@@ -50,6 +50,8 @@ type InvestmentPath = 'value-hunter' | 'global-explorer' | 'risk-guardian' | 'di
 type QuestCategory = 'basic' | 'money-management' | 'investment' | 'goal' | 'specialization';
 type QuestType = 'lesson' | 'quiz' | 'scenario' | 'action' | 'trade' | 'friend';
 type QuestStatus = 'available' | 'in-progress' | 'reward' | 'done' | 'locked';
+type AssetCategory = 'thai' | 'us' | 'etf' | 'bond' | 'commodity' | 'esg';
+type AssetVolatility = 'very-low' | 'low' | 'medium' | 'high' | 'very-high';
 
 interface Quest {
   id: string;
@@ -106,6 +108,12 @@ interface TradingStats {
   rankTrend?: RankTrend;
 }
 
+interface LessonQuizQuestion {
+  question: string;
+  options: string[];
+  correct: number;
+}
+
 interface VideoLesson {
   id: string;
   chapter: string;
@@ -120,6 +128,8 @@ interface VideoLesson {
   question: string;
   options: string[];
   correct: number;
+  quizQuestions?: LessonQuizQuestion[];
+  passingScore?: number;
 }
 
 interface PlayerProgress {
@@ -172,6 +182,15 @@ interface CloudPortfolioSnapshot {
   updated_at?: string;
 }
 
+type EvolutionMilestone = 'stage' | 'path' | 'path-master' | 'investment-master';
+
+interface EvolutionCutsceneState {
+  fromStage: EvolutionStage;
+  toStage: EvolutionStage;
+  investmentPath?: InvestmentPath;
+  milestone: EvolutionMilestone;
+}
+
 interface FriendRequestView {
   id: string;
   requester_id: string;
@@ -192,7 +211,8 @@ function calcTradingReturnPct(portfolioValue: number, initialCapital = INITIAL_T
 }
 
 function getRequiredExp(level: number): number {
-  return 100 + level * 40;
+  // Prototype tuning: keep level-up feedback fast so players can see evolution/unlocks sooner.
+  return 70 + level * 20;
 }
 
 function getLearningPhase(level: number): LearningPhase {
@@ -226,6 +246,13 @@ const EVOLUTION_INFO: Record<EvolutionStage, { name: string; desc: string; minLe
   'specialized-bua': { name: 'Specialized Bua', desc: 'เชี่ยวชาญเส้นทางเฉพาะ',       minLevel: 20 },
   'investment-master':{ name: 'Investment Master', desc: 'ปรมาจารย์การลงทุนที่ผ่าน Master ครบทุกสาย', minLevel: 50 },
 };
+
+function getEvolutionMascotStage(stage: EvolutionStage): number {
+  if (stage === 'bua-saver') return 2;
+  if (stage === 'bua-investor') return 3;
+  if (stage === 'specialized-bua' || stage === 'investment-master') return 4;
+  return 1;
+}
 
 // ============================================================
 // FEATURE UNLOCKS
@@ -417,6 +444,39 @@ const SHOP = [
   { id: 's5', icon: '🎁', name: 'กล่องเซอร์ไพรส์', price: 100, happy: 30, energy: 30 },
 ];
 
+const FEED_REACTIONS = [
+  'ขอบคุณนะ! อิ่มแล้วว 🌸',
+  'อร่อยมาก! น้องบัวมีแรงขึ้นแล้ว ✨',
+  'ใจดีจังเลย ขอบคุณที่ดูแลน้องบัวนะ 💖',
+  'เติมพลังแล้ว ไปเรียนเรื่องหุ้นกันต่อไหม? 📚',
+  'พลังงานพร้อม ใจพร้อม ลงทุนต้องมีแผนด้วยนะ 📈',
+  'คุณดูแลน้องบัวเก่งขึ้นทุกวันเลยนะ!',
+  'ขอบคุณที่ไม่ลืมน้องบัวนะ 🥺',
+  'ผู้ดูแลที่ดี = นักลงทุนที่มีวินัย! 🌟',
+];
+
+const HIGH_STAT_FEED_REACTIONS = [
+  'สดใสมาก! พร้อมลุยภารกิจแล้ว 🌟',
+  'พลังเต็มเปี่ยม วันนี้ต้องทำได้ดีแน่!',
+  'อิ่มใจ อิ่มพลัง พร้อมเรียนรู้ต่อเลย 💪',
+];
+
+const LOW_STAT_FEED_REACTIONS = [
+  'ดีขึ้นแล้วน้า แต่อยากพักอีกนิด 🥺',
+  'ขอบคุณนะ เริ่มมีแรงขึ้นแล้ว!',
+  'ได้พลังเพิ่มแล้ว ดูแลกันต่ออีกนิดนะ 🌱',
+];
+
+function pickRandom<T>(items: T[]): T {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+function getFeedReaction(happy: number, energy: number): string {
+  if (happy >= 90 && energy >= 90) return pickRandom(HIGH_STAT_FEED_REACTIONS);
+  if (happy < 55 || energy < 55) return pickRandom(LOW_STAT_FEED_REACTIONS);
+  return pickRandom(FEED_REACTIONS);
+}
+
 const CHECKIN_REWARDS = [50, 80, 100, 150, 200, 250, 500];
 
 // ============================================================
@@ -501,6 +561,49 @@ const STOCK101_LESSONS: VideoLesson[] = [
       'หนี้ที่บริษัทต้องจ่ายคืนผู้ซื้อหุ้นเสมอ',
     ],
     correct: 1,
+    passingScore: 3,
+    quizQuestions: [
+      {
+        question: 'หากอัตราเงินเฟ้ออยู่ที่ 10% ราคาเบอร์เกอร์จาก 100 บาท จะเพิ่มขึ้นเป็นเท่าใดในอีก 10 ปีข้างหน้า ตามตัวอย่างที่ยกในวิดีโอ?',
+        options: ['110 บาท', '260 บาท', '130 บาท', '200 บาท'],
+        correct: 1,
+      },
+      {
+        question: 'ทำไม “สภาพคล่อง” (Liquidity) ถึงเป็นปัจจัยสำคัญที่นักลงทุนต้องพิจารณา?',
+        options: [
+          'เพื่อป้องกันความเสี่ยงจากเงินเฟ้อได้ 100%',
+          'เพื่อให้สามารถเปลี่ยนสินทรัพย์เป็นเงินสดได้ทันท่วงทีเมื่อมีความจำเป็นต้องใช้เงิน',
+          'เพื่อลดภาระภาษีจากการถือครองสินทรัพย์ระยะยาว',
+          'เพื่อให้สินทรัพย์มีมูลค่าเพิ่มขึ้นอย่างรวดเร็วภายในระยะเวลาสั้น ๆ',
+        ],
+        correct: 1,
+      },
+      {
+        question: 'ข้อดีของการลงทุนในหุ้นที่แตกต่างจากการลงทุนในอสังหาริมทรัพย์อย่างเห็นได้ชัดคืออะไร?',
+        options: [
+          'หุ้นมีสภาพคล่องสูงกว่า สามารถซื้อขายเปลี่ยนมือได้ง่ายผ่านระบบดิจิทัล',
+          'หุ้นให้ผลตอบแทนที่คงที่และแน่นอนกว่าในทุกปี',
+          'การลงทุนในหุ้นให้ความรู้สึกเป็นเจ้าของมากกว่าการถือโฉนดที่ดิน',
+          'การถือหุ้นไม่ต้องเสียภาษีจากเงินปันผลเลย',
+        ],
+        correct: 0,
+      },
+      {
+        question: 'สำหรับมือใหม่ที่มีเงินทุนจำกัดแต่อยากกระจายความเสี่ยงไปในบริษัทชั้นนำหลายแห่ง เครื่องมือใดที่เหมาะสมที่สุดตามคำแนะนำในคลิป?',
+        options: [
+          'การเลือกซื้อหุ้นรายตัวที่ราคาต่ำที่สุดในตลาด',
+          'การฝากเงินไว้ในบัญชีออมทรัพย์พิเศษที่มีดอกเบี้ยสูง',
+          'การลงทุนในกองทุน ETF (Exchange Traded Fund)',
+          'การกู้ยืมเงินเพื่อนำมาลงทุนในหุ้นเพียงบริษัทเดียวที่มั่นใจ',
+        ],
+        correct: 2,
+      },
+      {
+        question: 'การออมเงินเดือนละ 1,000 บาท ใน ETF ที่ให้ผลตอบแทนประมาณ 12% ต่อปี เป็นเวลา 40 ปี จะมีเงินเก็บรวมประมาณเท่าใด?',
+        options: ['ประมาณ 480,000 บาท', 'ประมาณ 5 ล้านบาท', 'ประมาณ 12 ล้านบาท', 'ประมาณ 1 ล้านบาท'],
+        correct: 2,
+      },
+    ],
   },
   {
     id: 'stock101-1-2',
@@ -608,19 +711,78 @@ const STOCK101_CHAPTER_BONUS = {
 };
 
 // ============================================================
-// MOCK STOCKS
+// PORTFOLIO SIMULATION ASSETS
+// Base prices are delayed reference quotes checked on 15 Jul 2026.
 // ============================================================
-const INITIAL_STOCKS = [
-  { sym: 'NVDA',  name: 'Nvidia Corp',            logo: '🟢', cat: 'us', base: 192.53 },
-  { sym: 'MSFT',  name: 'Microsoft Corp',          logo: '🪟', cat: 'us', base: 372.97 },
-  { sym: 'TSM',   name: 'Taiwan Semiconductor',    logo: '🔴', cat: 'us', base: 432.35 },
-  { sym: 'AVGO',  name: 'Broadcom Inc.',            logo: '🔺', cat: 'us', base: 365.02 },
-  { sym: 'AAPL',  name: 'Apple Inc.',               logo: '🍎', cat: 'us', base: 245.18 },
-  { sym: 'PTT',   name: 'ปตท.',                     logo: '⛽', cat: 'th', base: 34.50  },
-  { sym: 'CPALL', name: 'ซีพี ออลล์',              logo: '🏪', cat: 'th', base: 58.25  },
-  { sym: 'KBANK', name: 'กสิกรไทย',                logo: '🏦', cat: 'th', base: 142.50 },
-  { sym: 'AOT',   name: 'ท่าอากาศยานไทย',           logo: '✈️', cat: 'th', base: 62.75  },
+const INITIAL_STOCKS: {
+  sym: string;
+  name: string;
+  logo: string;
+  cat: AssetCategory;
+  base: number;
+  currency: 'THB' | 'USD';
+  assetType: string;
+  sector: string;
+  volatility: AssetVolatility;
+  risk: 'Defensive' | 'Balanced' | 'Growth' | 'Aggressive';
+  pathTags: InvestmentPath[];
+  desc: string;
+}[] = [
+  // Thai stocks
+  { sym: 'PTT',   name: 'PTT PCL',                    logo: '⛽', cat: 'thai', base: 38.25,  currency: 'THB', assetType: 'หุ้นไทย', sector: 'Energy',        volatility: 'medium', risk: 'Balanced',   pathTags: ['value-hunter','dividend-keeper'], desc: 'หุ้นพลังงานขนาดใหญ่ เหมาะฝึกอ่านวัฏจักรสินค้าโภคภัณฑ์และเงินปันผล' },
+  { sym: 'CPALL', name: 'CP ALL PCL',                 logo: '🏪', cat: 'thai', base: 46.25,  currency: 'THB', assetType: 'หุ้นไทย', sector: 'Consumer',      volatility: 'medium', risk: 'Balanced',   pathTags: ['value-hunter','dividend-keeper'], desc: 'ค้าปลีกเชิงรับ เหมาะฝึกดูรายได้สม่ำเสมอและคุณภาพธุรกิจ' },
+  { sym: 'KBANK', name: 'Kasikornbank',               logo: '🏦', cat: 'thai', base: 231.00, currency: 'THB', assetType: 'หุ้นไทย', sector: 'Banking',       volatility: 'medium', risk: 'Balanced',   pathTags: ['value-hunter','dividend-keeper'], desc: 'หุ้นธนาคาร เหมาะฝึกดูดอกเบี้ย สินเชื่อ และคุณภาพสินทรัพย์' },
+  { sym: 'AOT',   name: 'Airports of Thailand',       logo: '✈️', cat: 'thai', base: 63.00,  currency: 'THB', assetType: 'หุ้นไทย', sector: 'Transport',     volatility: 'medium', risk: 'Growth',     pathTags: ['global-explorer','bua-trader'], desc: 'หุ้นสนามบิน เชื่อมโยงท่องเที่ยวและเศรษฐกิจโลก' },
+  { sym: 'ADVANC',name: 'Advanced Info Service',      logo: '📶', cat: 'thai', base: 382.00, currency: 'THB', assetType: 'หุ้นไทย', sector: 'Telecom',       volatility: 'low',    risk: 'Defensive',  pathTags: ['risk-guardian','dividend-keeper'], desc: 'หุ้นสื่อสารกระแสเงินสดแข็งแรง เหมาะสาย defensive และ dividend' },
+  { sym: 'SCB',   name: 'SCB X',                      logo: '💜', cat: 'thai', base: 157.00, currency: 'THB', assetType: 'หุ้นไทย', sector: 'Banking',       volatility: 'medium', risk: 'Balanced',   pathTags: ['value-hunter','dividend-keeper'], desc: 'หุ้นการเงินขนาดใหญ่ เหมาะฝึกดู valuation และ dividend yield' },
+  { sym: 'BDMS',  name: 'Bangkok Dusit Medical',      logo: '🏥', cat: 'thai', base: 19.30,  currency: 'THB', assetType: 'หุ้นไทย', sector: 'Healthcare',    volatility: 'low',    risk: 'Defensive',  pathTags: ['risk-guardian','global-explorer'], desc: 'หุ้นโรงพยาบาล เหมาะฝึกมองธุรกิจคุณภาพและรายได้เชิงรับ' },
+
+  // US stocks
+  { sym: 'AAPL',  name: 'Apple Inc.',                 logo: '🍎', cat: 'us',   base: 314.86, currency: 'USD', assetType: 'หุ้น US', sector: 'Technology',    volatility: 'medium', risk: 'Growth',     pathTags: ['global-explorer','value-hunter'], desc: 'หุ้นเทคโนโลยีขนาดใหญ่ เหมาะฝึกมองแบรนด์ กระแสเงินสด และ valuation' },
+  { sym: 'MSFT',  name: 'Microsoft Corp.',            logo: '🪟', cat: 'us',   base: 384.93, currency: 'USD', assetType: 'หุ้น US', sector: 'Technology',    volatility: 'medium', risk: 'Growth',     pathTags: ['global-explorer','value-hunter'], desc: 'หุ้นเทค/คลาวด์ขนาดใหญ่ ใช้เรียนรู้ธุรกิจคุณภาพและ recurring revenue' },
+  { sym: 'NVDA',  name: 'NVIDIA Corp.',               logo: '🟢', cat: 'us',   base: 211.80, currency: 'USD', assetType: 'หุ้น US', sector: 'AI/Semicon',    volatility: 'very-high', risk: 'Aggressive', pathTags: ['global-explorer','bua-trader'], desc: 'หุ้น AI/ชิป ความผันผวนสูง เหมาะฝึก momentum และการคุมความเสี่ยง' },
+  { sym: 'GOOG',  name: 'Alphabet Class C',           logo: '🔎', cat: 'us',   base: 357.33, currency: 'USD', assetType: 'หุ้น US', sector: 'Technology',    volatility: 'high',   risk: 'Growth',     pathTags: ['global-explorer','value-hunter'], desc: 'หุ้นแพลตฟอร์มและ AI เหมาะฝึกมอง moat และการเติบโตระยะยาว' },
+  { sym: 'AMZN',  name: 'Amazon.com',                 logo: '📦', cat: 'us',   base: 247.49, currency: 'USD', assetType: 'หุ้น US', sector: 'Consumer/Cloud',volatility: 'high',   risk: 'Growth',     pathTags: ['global-explorer','bua-trader'], desc: 'หุ้น e-commerce/cloud เหมาะฝึกดูการเติบโตและ margin' },
+  { sym: 'META',  name: 'Meta Platforms',             logo: '🧠', cat: 'us',   base: 661.04, currency: 'USD', assetType: 'หุ้น US', sector: 'Social/AI',     volatility: 'high',   risk: 'Growth',     pathTags: ['global-explorer','bua-trader'], desc: 'หุ้นโซเชียลและ AI เหมาะฝึกอ่าน sentiment และงบลงทุนอนาคต' },
+  { sym: 'TSLA',  name: 'Tesla Inc.',                 logo: '⚡', cat: 'us',   base: 396.36, currency: 'USD', assetType: 'หุ้น US', sector: 'EV',           volatility: 'very-high', risk: 'Aggressive', pathTags: ['bua-trader','global-explorer'], desc: 'หุ้น EV ความผันผวนสูง เหมาะฝึกแผนซื้อขายและ stop-loss จำลอง' },
+  { sym: 'JPM',   name: 'JPMorgan Chase',             logo: '🏛️', cat: 'us',   base: 342.89, currency: 'USD', assetType: 'หุ้น US', sector: 'Banking',       volatility: 'medium', risk: 'Balanced',   pathTags: ['value-hunter','dividend-keeper'], desc: 'หุ้นธนาคารระดับโลก เหมาะฝึกมองวัฏจักรดอกเบี้ยและกำไรธนาคาร' },
+
+  // ETFs / bonds / commodities / ESG
+  { sym: 'SPY',   name: 'SPDR S&P 500 ETF',           logo: '🇺🇸', cat: 'etf',  base: 751.83, currency: 'USD', assetType: 'ETF',     sector: 'US Market',    volatility: 'low',    risk: 'Balanced',   pathTags: ['global-explorer','risk-guardian'], desc: 'ETF ตลาดหุ้นสหรัฐฯ ใช้ฝึกการกระจายความเสี่ยงด้วยดัชนีใหญ่' },
+  { sym: 'QQQ',   name: 'Invesco Nasdaq 100 ETF',     logo: '💻', cat: 'etf',  base: 719.71, currency: 'USD', assetType: 'ETF',     sector: 'US Growth',    volatility: 'high',   risk: 'Growth',     pathTags: ['global-explorer','bua-trader'], desc: 'ETF Nasdaq 100 เน้นหุ้นเติบโตและเทคโนโลยี ขยับแรงกว่า broad market' },
+  { sym: 'BND',   name: 'Vanguard Total Bond ETF',    logo: '🧱', cat: 'bond', base: 72.62,  currency: 'USD', assetType: 'Bond ETF',sector: 'Bonds',        volatility: 'very-low', risk: 'Defensive', pathTags: ['risk-guardian','dividend-keeper'], desc: 'ETF ตราสารหนี้ ความผันผวนต่ำ ใช้เรียนรู้บทบาทสินทรัพย์ป้องกันความเสี่ยง' },
+  { sym: 'BNDX',  name: 'Vanguard Intl Bond ETF',     logo: '🌐', cat: 'bond', base: 48.01,  currency: 'USD', assetType: 'Bond ETF',sector: 'Global Bonds', volatility: 'very-low', risk: 'Defensive', pathTags: ['risk-guardian','global-explorer'], desc: 'ETF ตราสารหนี้ต่างประเทศ ช่วยสอนเรื่อง diversification ข้ามประเทศ' },
+  { sym: 'GLD',   name: 'SPDR Gold Shares',           logo: '🥇', cat: 'commodity', base: 510.00, currency: 'USD', assetType: 'Gold ETF', sector: 'Gold', volatility: 'medium', risk: 'Balanced', pathTags: ['risk-guardian','bua-trader'], desc: 'ETF ทองคำ ใช้ฝึกบทบาทสินทรัพย์หลบภัยและการเคลื่อนไหวต่างจากหุ้น' },
+  { sym: 'USO',   name: 'United States Oil Fund',     logo: '🛢️', cat: 'commodity', base: 120.17, currency: 'USD', assetType: 'Oil ETF',  sector: 'Oil',  volatility: 'high', risk: 'Aggressive', pathTags: ['bua-trader','global-explorer'], desc: 'ETF น้ำมัน ความผันผวนสูง เหมาะฝึกอ่านปัจจัยมหภาคและสินค้าโภคภัณฑ์' },
+  { sym: 'ESGU',  name: 'iShares ESG Aware MSCI USA', logo: '🌿', cat: 'esg',  base: 164.70, currency: 'USD', assetType: 'ESG ETF', sector: 'US ESG',       volatility: 'low',    risk: 'Balanced',   pathTags: ['esg-hero','global-explorer'], desc: 'ETF หุ้นสหรัฐฯ ที่คัดกรอง ESG เหมาะกับสายลงทุนยั่งยืน' },
+  { sym: 'ICLN',  name: 'iShares Global Clean Energy',logo: '☀️', cat: 'esg',  base: 13.50,  currency: 'USD', assetType: 'ESG ETF', sector: 'Clean Energy', volatility: 'high',   risk: 'Growth',     pathTags: ['esg-hero','bua-trader'], desc: 'ETF พลังงานสะอาด ความผันผวนสูง ใช้สอน ESG growth และความเสี่ยงธีมลงทุน' },
 ];
+
+const ASSET_FILTERS: { id: 'all' | AssetCategory | 'my-path'; label: string }[] = [
+  { id: 'all', label: 'ทั้งหมด' },
+  { id: 'thai', label: 'หุ้นไทย' },
+  { id: 'us', label: 'หุ้น US' },
+  { id: 'etf', label: 'ETF' },
+  { id: 'bond', label: 'Bond' },
+  { id: 'commodity', label: 'Gold/Oil' },
+  { id: 'esg', label: 'ESG' },
+  { id: 'my-path', label: 'สายของฉัน' },
+];
+
+const ASSET_VOLATILITY_RANGE: Record<AssetVolatility, number> = {
+  'very-low': 0.45,
+  low: 1.10,
+  medium: 2.20,
+  high: 4.20,
+  'very-high': 6.50,
+};
+
+const ASSET_RISK_BADGE: Record<string, string> = {
+  Defensive: 'bg-blue-50 text-blue-600',
+  Balanced: 'bg-emerald-50 text-emerald-600',
+  Growth: 'bg-orange-50 text-orange-600',
+  Aggressive: 'bg-red-50 text-red-500',
+};
 
 const MARKET_TICK_MS = 5 * 60 * 1000;
 
@@ -642,24 +804,27 @@ const seededRandom = (seed: string) => {
 
 const seededRange = (seed: string, min: number, max: number) => min + seededRandom(seed) * (max - min);
 
-const genSpark = (base: number, pts = 20, seed = 'default') => {
+const genSpark = (base: number, pts = 20, seed = 'default', volatility: AssetVolatility = 'medium') => {
   const arr: { i: number; v: number }[] = [];
-  let v = base * (1 + seededRange(`${seed}-start`, -0.03, 0.01));
+  const range = ASSET_VOLATILITY_RANGE[volatility];
+  let v = base * (1 + seededRange(`${seed}-start`, -range / 180, range / 260));
   for (let i = 0; i < pts; i++) {
-    v += seededRange(`${seed}-pt-${i}`, -0.48, 0.52) * base * 0.015;
-    arr.push({ i, v: Math.max(base * 0.9, v) });
+    v += seededRange(`${seed}-pt-${i}`, -0.48, 0.52) * base * (0.0025 + range * 0.0012);
+    arr.push({ i, v: Math.max(base * (1 - range / 35), v) });
   }
   return arr;
 };
 
 const buildMarketStocks = (tick = getMarketTick()) =>
   INITIAL_STOCKS.map(s => {
-    const changePct = seededRange(`${s.sym}-${tick}-change`, -4, 4);
+    const range = ASSET_VOLATILITY_RANGE[s.volatility];
+    const drift = s.risk === 'Defensive' ? 0.04 : s.risk === 'Growth' ? 0.08 : s.risk === 'Aggressive' ? 0.12 : 0.06;
+    const changePct = seededRange(`${s.sym}-${tick}-change`, -range, range) + drift;
     return {
       ...s,
       price: s.base * (1 + changePct / 100),
       changePct,
-      spark: genSpark(s.base, 20, `${s.sym}-${tick}`),
+      spark: genSpark(s.base, 20, `${s.sym}-${tick}`, s.volatility),
       marketTick: tick,
     };
   });
@@ -682,6 +847,18 @@ const DEFAULT_PLAYER: PlayerProgress = {
   streak: 0, checkedInToday: false,
   feedCount: 0, lessonCount: 0, tradeCount: 0, readNews: [],
 };
+
+function createDefaultPlayer(): PlayerProgress {
+  return {
+    ...DEFAULT_PLAYER,
+    completedQuestIds: [...DEFAULT_PLAYER.completedQuestIds],
+    completedLessonIds: [...DEFAULT_PLAYER.completedLessonIds],
+    claimedRewardIds: [...DEFAULT_PLAYER.claimedRewardIds],
+    unlockedFeatureIds: [...DEFAULT_PLAYER.unlockedFeatureIds],
+    earnedBadgeIds: [...DEFAULT_PLAYER.earnedBadgeIds],
+    readNews: [...DEFAULT_PLAYER.readNews],
+  };
+}
 
 function loadGame(): SavedGameState | null {
   try {
@@ -984,11 +1161,17 @@ const BuaCoinIcon = ({ size = 16, className = '' }: { size?: number; className?:
 const BuaMascot = ({ size = 180, mood = 'happy', stage = 1, evolutionStage, investmentPath, imageOverride, imageScale = 1, imageOffsetX = 0, imageOffsetY = 0 }: { size?: number; mood?: string; stage?: number; evolutionStage?: EvolutionStage; investmentPath?: InvestmentPath; imageOverride?: string; imageScale?: number; imageOffsetX?: number; imageOffsetY?: number }) => {
   const pathImage = investmentPath ? INVESTMENT_PATHS[investmentPath]?.imageUrl : undefined;
   const imageSrc = imageOverride ?? (evolutionStage === 'investment-master' ? INVESTMENT_MASTER_IMG : pathImage ?? (evolutionStage === 'bua-seed' ? BUA_SEED_IMG : evolutionStage === 'bua-saver' ? BUA_SAVER_IMG : evolutionStage === 'bua-investor' ? BUA_INVESTOR_IMG : BUA_IMG));
+  const stageImageScale = evolutionStage === 'bua-saver' && !imageOverride ? 2.25
+    : evolutionStage === 'bua-investor' && !imageOverride ? 2.25
+    : 1;
+  const stageOffsetY = evolutionStage === 'bua-saver' && !imageOverride ? size * 0.42
+    : evolutionStage === 'bua-investor' && !imageOverride ? size * 0.48
+    : 0;
   return (
   <div style={{ width: size, height: size, position: 'relative', display: 'inline-block', background: 'transparent' }}>
     <img src={imageSrc} alt="Bua Buddy"
       style={{ width: '100%', height: '100%', objectFit: 'contain',
-        transform: `translate(${imageOffsetX}px, ${imageOffsetY}px) scale(${imageScale})`, transformOrigin: 'center bottom',
+        transform: `translate(${imageOffsetX}px, ${imageOffsetY + stageOffsetY}px) scale(${imageScale * stageImageScale})`, transformOrigin: 'center bottom',
         filter: mood === 'sad' ? 'grayscale(40%) brightness(0.85)' : 'none', transition: 'filter 0.3s' }} />
     {mood === 'happy' && <>
       <div style={{ position: 'absolute', top: '10%', left:  '0%', fontSize: size * 0.11 }}>✨</div>
@@ -1077,22 +1260,131 @@ const PortfolioTutorialModal = ({ onClose }: { onClose: () => void }) => {
   );
 };
 
-const EvolutionModal = ({ stage, onClose, imageOverride, imageScale, imageOffsetX, imageOffsetY, investmentPath }: { stage: EvolutionStage; onClose: () => void; imageOverride?: string; imageScale?: number; imageOffsetX?: number; imageOffsetY?: number; investmentPath?: InvestmentPath | null }) => {
-  const info = EVOLUTION_INFO[stage];
-  const stageVisual = stage === 'bua-investor' ? 3 : stage === 'specialized-bua' || stage === 'investment-master' ? 4 : stage === 'bua-saver' ? 2 : 1;
+const EvolutionCutscene = ({
+  cutscene,
+  onClose,
+  imageOverride,
+  imageScale,
+  imageOffsetX,
+  imageOffsetY,
+  investmentPath,
+}: {
+  cutscene: EvolutionCutsceneState;
+  onClose: () => void;
+  imageOverride?: string;
+  imageScale?: number;
+  imageOffsetX?: number;
+  imageOffsetY?: number;
+  investmentPath?: InvestmentPath | null;
+}) => {
+  const activePath = cutscene.investmentPath ?? investmentPath ?? undefined;
+  const pathInfo = activePath ? INVESTMENT_PATHS[activePath] : null;
+  const pathMasterInfo = activePath ? INVESTMENT_PATH_MASTERS[activePath] : null;
+  const toInfo = EVOLUTION_INFO[cutscene.toStage];
+  const toName = cutscene.milestone === 'path-master' && pathMasterInfo
+    ? pathMasterInfo.masterName
+    : cutscene.milestone === 'path' && pathInfo
+    ? pathInfo.name
+    : toInfo.name;
+  const toDesc = cutscene.milestone === 'path-master' && pathMasterInfo
+    ? pathMasterInfo.theme
+    : cutscene.milestone === 'path' && pathInfo
+    ? pathInfo.strength
+    : toInfo.desc;
+  const themeKey = activePath ?? cutscene.toStage;
+  const theme = {
+    'value-hunter': { icon: '🔎', aura: 'from-amber-300 via-yellow-200 to-orange-400', text: 'text-amber-700', chip: 'bg-amber-100 text-amber-700', particle: '📘' },
+    'global-explorer': { icon: '🌏', aura: 'from-sky-300 via-blue-200 to-indigo-400', text: 'text-blue-700', chip: 'bg-blue-100 text-blue-700', particle: '✨' },
+    'risk-guardian': { icon: '🛡️', aura: 'from-cyan-300 via-blue-200 to-slate-400', text: 'text-cyan-700', chip: 'bg-cyan-100 text-cyan-700', particle: '🛡️' },
+    'dividend-keeper': { icon: '💎', aura: 'from-emerald-300 via-green-200 to-yellow-300', text: 'text-emerald-700', chip: 'bg-emerald-100 text-emerald-700', particle: '🪙' },
+    'bua-trader': { icon: '⚡', aura: 'from-purple-300 via-fuchsia-200 to-pink-400', text: 'text-purple-700', chip: 'bg-purple-100 text-purple-700', particle: '📈' },
+    'esg-hero': { icon: '🌿', aura: 'from-lime-300 via-green-200 to-emerald-400', text: 'text-green-700', chip: 'bg-green-100 text-green-700', particle: '🍃' },
+    'investment-master': { icon: '👑', aura: 'from-yellow-300 via-pink-200 to-blue-400', text: 'text-yellow-700', chip: 'bg-yellow-100 text-yellow-700', particle: '👑' },
+    'specialized-bua': { icon: '🌟', aura: 'from-pink-300 via-purple-200 to-blue-400', text: 'text-pink-700', chip: 'bg-pink-100 text-pink-700', particle: '🌸' },
+    'bua-investor': { icon: '📈', aura: 'from-blue-300 via-sky-200 to-cyan-400', text: 'text-blue-700', chip: 'bg-blue-100 text-blue-700', particle: '✨' },
+    'bua-saver': { icon: '💰', aura: 'from-green-300 via-emerald-200 to-sky-300', text: 'text-emerald-700', chip: 'bg-emerald-100 text-emerald-700', particle: '💫' },
+    'bua-seed': { icon: '🌱', aura: 'from-lime-300 via-green-100 to-sky-200', text: 'text-lime-700', chip: 'bg-lime-100 text-lime-700', particle: '✨' },
+  }[themeKey] ?? { icon: '✨', aura: 'from-blue-300 via-pink-200 to-purple-400', text: 'text-blue-700', chip: 'bg-blue-100 text-blue-700', particle: '✨' };
+  const particles = Array.from({ length: 26 }, (_, i) => ({
+    id: i,
+    left: 8 + ((i * 37) % 84),
+    delay: (i % 9) * 0.16,
+    duration: 2.2 + (i % 5) * 0.18,
+    size: 14 + (i % 4) * 4,
+  }));
+
   return (
-    <div className="fixed inset-0 bg-black/60 z-[74] flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl w-full max-w-sm p-6 text-center shadow-2xl">
-        <div className="text-5xl mb-2">✨</div>
-        <div className="mx-auto mb-3 w-32 h-32 rounded-full bg-gradient-to-br from-blue-50 to-pink-50 border border-blue-100 flex items-center justify-center">
-          <BuaMascot size={120} mood="happy" stage={stageVisual} evolutionStage={stage} investmentPath={investmentPath ?? undefined} imageOverride={imageOverride} imageScale={imageScale ?? 1} imageOffsetX={imageOffsetX ?? 0} imageOffsetY={imageOffsetY ?? 0}/>
+    <div className="fixed inset-0 bg-slate-950/80 z-[78] flex items-center justify-center p-4 overflow-hidden">
+      <style>{`
+        @keyframes bua-evo-reveal { 0% { transform: translateY(56px) scale(.22) rotate(-10deg); opacity: 0; filter: brightness(2.5) blur(12px); } 24% { opacity: 1; transform: translateY(-22px) scale(1.24) rotate(3deg); filter: brightness(1.75) blur(0); } 48% { transform: translateY(6px) scale(.96) rotate(-1deg); } 72% { transform: translateY(-5px) scale(1.04); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: brightness(1); } }
+        @keyframes bua-evo-ring { 0% { transform: translate(-50%, -50%) rotate(0deg) scale(.72); opacity: .25; } 45% { opacity: 1; } 100% { transform: translate(-50%, -50%) rotate(360deg) scale(1.22); opacity: .45; } }
+        @keyframes bua-evo-float { 0% { transform: translateY(140px) rotate(0deg) scale(.65); opacity: 0; } 18% { opacity: 1; } 100% { transform: translateY(-260px) rotate(220deg) scale(1.15); opacity: 0; } }
+        @keyframes bua-evo-flash { 0% { opacity: .85; } 18% { opacity: .35; } 38%, 100% { opacity: 0; } }
+        @keyframes bua-evo-card { 0% { transform: translateY(26px) scale(.94); opacity: 0; } 46% { transform: translateY(26px) scale(.94); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+      `}</style>
+
+      <div className={`absolute inset-0 bg-gradient-to-br ${theme.aura} opacity-40`}/>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,.42),transparent_38%)]"/>
+
+      {particles.map(p => (
+        <div
+          key={p.id}
+          className="absolute bottom-[-40px] pointer-events-none"
+          style={{
+            left: `${p.left}%`,
+            animation: `bua-evo-float ${p.duration}s ease-in-out ${p.delay}s infinite`,
+            fontSize: p.size,
+          }}
+        >
+          {p.id % 4 === 0 ? theme.particle : p.id % 4 === 1 ? '✨' : p.id % 4 === 2 ? '🌸' : '✦'}
         </div>
-        <div className="text-xs font-bold text-blue-500 mb-1">วิวัฒนาการใหม่</div>
-        <div className="font-black text-2xl text-gray-800 mb-1">{info.name}</div>
-        <div className="text-sm text-gray-600 mb-4">{info.desc}</div>
-        <button onClick={onClose} className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold py-3 rounded-full shadow active:scale-95">
-          เยี่ยมเลย!
-        </button>
+      ))}
+
+      <div className="relative w-full max-w-md min-h-[680px] rounded-[2rem] overflow-hidden shadow-2xl border border-white/30 bg-white/85 backdrop-blur-xl">
+        <div className={`absolute -top-28 left-1/2 w-[430px] h-[430px] rounded-full bg-gradient-to-br ${theme.aura} blur-2xl opacity-70 -translate-x-1/2`}/>
+        <div className="absolute top-[210px] left-1/2 w-60 h-60 rounded-full border-4 border-white/70 border-dashed" style={{ animation: 'bua-evo-ring 3.1s linear infinite' }}/>
+        <div className="absolute top-[210px] left-1/2 w-40 h-40 rounded-full border border-white/80" style={{ animation: 'bua-evo-ring 2.4s linear infinite reverse' }}/>
+        <div className="absolute inset-0 bg-white pointer-events-none" style={{ animation: 'bua-evo-flash 3.4s ease-out forwards' }}/>
+
+        <div className="relative z-10 px-6 pt-8 text-center">
+          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black ${theme.chip} shadow-sm`}>
+            {theme.icon} EVOLUTION MOMENT
+          </div>
+          <div className="text-4xl font-black text-white drop-shadow-[0_3px_12px_rgba(0,0,0,.25)] mt-5">Evolution!</div>
+          <div className="mt-2 text-xs font-bold text-white/90 drop-shadow">แสงแห่งการเติบโตของน้องบัว</div>
+        </div>
+
+        <div className="absolute top-[170px] left-1/2 -translate-x-1/2 z-30 w-72 h-72 flex items-center justify-center">
+          <div style={{ animation: 'bua-evo-reveal 3.25s ease-out forwards' }}>
+            <BuaMascot
+              size={210}
+              mood="happy"
+              stage={getEvolutionMascotStage(cutscene.toStage)}
+              evolutionStage={cutscene.toStage}
+              investmentPath={activePath}
+              imageOverride={imageOverride}
+              imageScale={imageScale ?? 1}
+              imageOffsetX={imageOffsetX ?? 0}
+              imageOffsetY={imageOffsetY ?? 0}
+            />
+          </div>
+        </div>
+
+        <div className="absolute left-4 right-4 bottom-5 z-40" style={{ animation: 'bua-evo-card 3.35s ease-out forwards' }}>
+          <div className="bg-white/95 rounded-3xl p-5 text-center shadow-xl border border-white">
+            <div className={`text-xs font-black mb-1 ${theme.text}`}>วิวัฒนาการสำเร็จ</div>
+            <div className="font-black text-2xl text-gray-900">{toName}</div>
+            <div className="text-sm text-gray-600 leading-relaxed mt-2">{toDesc}</div>
+            <div className="mt-4 grid grid-cols-3 gap-2 text-[10px] font-bold">
+              <div className="rounded-2xl bg-blue-50 text-blue-600 p-2">ร่างใหม่</div>
+              <div className="rounded-2xl bg-yellow-50 text-yellow-700 p-2">Badge</div>
+              <div className="rounded-2xl bg-pink-50 text-pink-600 p-2">พลังใจ +</div>
+            </div>
+            <button onClick={onClose} className={`mt-4 w-full bg-gradient-to-r ${theme.aura} text-white font-black py-3 rounded-full shadow active:scale-95`}>
+              ไปต่อ! ✨
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -1214,7 +1506,7 @@ export default function App() {
   // --- Load or init ---
   const saved = loadGame();
 
-  const [player,      setPlayer]      = useState<PlayerProgress>(saved?.player ?? DEFAULT_PLAYER);
+  const [player,      setPlayer]      = useState<PlayerProgress>(saved?.player ?? createDefaultPlayer());
   const [tradingCash, setTradingCash] = useState(saved?.tradingCash ?? INITIAL_TRADING_CASH);
   const [holdings,    setHoldings]    = useState<Record<string, { shares: number; avgCost: number }>>(saved?.holdings ?? {});
   const [tradeHistory,setTradeHistory]= useState<any[]>(saved?.tradeHistory ?? []);
@@ -1224,15 +1516,16 @@ export default function App() {
   const [screen,     setScreen]     = useState('home');
   const [modal,      setModal]      = useState<any>(null);
   const [reward,     setReward]     = useState<any>(null);
+  const [mascotBubble, setMascotBubble] = useState<{ text: string; id: number } | null>(null);
   const [quizState,  setQuizState]  = useState({ step: 'lesson', answer: null as number | null });
   const [investTab,  setInvestTab]  = useState('market');
-  const [cat,        setCat]        = useState('us');
+  const [cat,        setCat]        = useState<'all' | AssetCategory | 'my-path'>('all');
   const [selected,   setSelected]   = useState<any>(null);
   const [tradeQty,   setTradeQty]   = useState(1);
   const [levelUpInfo,setLevelUpInfo]= useState<{ level: number } | null>(null);
   const [portfolioUnlockInfo, setPortfolioUnlockInfo] = useState(false);
   const [showPortfolioTutorial, setShowPortfolioTutorial] = useState(false);
-  const [evolutionInfo, setEvolutionInfo] = useState<EvolutionStage | null>(null);
+  const [evolutionInfo, setEvolutionInfo] = useState<EvolutionCutsceneState | null>(null);
   const [showPathModal, setShowPathModal] = useState(false);
   const [pathPromptDismissed, setPathPromptDismissed] = useState(false);
   const [showDev,    setShowDev]    = useState(false);
@@ -1250,6 +1543,7 @@ export default function App() {
   const cloudLoadedRef = useRef(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const portfolioSnapshotTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mascotBubbleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!supabase) {
@@ -1625,6 +1919,17 @@ export default function App() {
     const badgeChanged = nextBadgeIds.length !== player.earnedBadgeIds.length;
     const stageChanged = nextEvolutionStage !== player.currentEvolutionStage;
     if (badgeChanged || stageChanged) {
+      const gainedBadgeIds = nextBadgeIds.filter(id => !player.earnedBadgeIds.includes(id));
+      const gainedPathMasterBadge = gainedBadgeIds.find(id => PATH_MASTER_BADGE_IDS.includes(id));
+      const gainedInvestmentMasterBadge = gainedBadgeIds.includes(INVESTMENT_MASTER_BADGE_ID);
+      if (stageChanged || gainedPathMasterBadge || gainedInvestmentMasterBadge) {
+        setEvolutionInfo({
+          fromStage: player.currentEvolutionStage,
+          toStage: nextEvolutionStage,
+          investmentPath: player.selectedInvestmentPath,
+          milestone: gainedInvestmentMasterBadge ? 'investment-master' : gainedPathMasterBadge ? 'path-master' : 'stage',
+        });
+      }
       setPlayer(p => ({
         ...p,
         earnedBadgeIds: nextBadgeIds,
@@ -1650,13 +1955,23 @@ export default function App() {
       }
       const nextBadgeIds = getBadgeIdsForLevelAndPath(level, p.selectedInvestmentPath, p.earnedBadgeIds);
       const nextEvolutionStage = getPlayerEvolutionStage({ ...p, level, earnedBadgeIds: nextBadgeIds });
+      const gainedBadgeIds = nextBadgeIds.filter(id => !p.earnedBadgeIds.includes(id));
+      const gainedPathMasterBadge = gainedBadgeIds.find(id => PATH_MASTER_BADGE_IDS.includes(id));
+      const gainedInvestmentMasterBadge = gainedBadgeIds.includes(INVESTMENT_MASTER_BADGE_ID);
       // Check new features
       const newFeatures = FEATURE_UNLOCKS
         .filter(f => f.id !== 'portfolio' && f.requiredLevel <= level && !p.unlockedFeatureIds.includes(f.id))
         .map(f => f.id);
 
       if (leveled) setLevelUpInfo({ level });
-      if (nextEvolutionStage !== p.currentEvolutionStage) setEvolutionInfo(nextEvolutionStage);
+      if (nextEvolutionStage !== p.currentEvolutionStage || gainedPathMasterBadge || gainedInvestmentMasterBadge) {
+        setEvolutionInfo({
+          fromStage: p.currentEvolutionStage,
+          toStage: nextEvolutionStage,
+          investmentPath: p.selectedInvestmentPath,
+          milestone: gainedInvestmentMasterBadge ? 'investment-master' : gainedPathMasterBadge ? 'path-master' : 'stage',
+        });
+      }
       return {
         ...p, level, currentExp: exp, totalExp: p.totalExp + amount,
         earnedBadgeIds: nextBadgeIds,
@@ -1671,17 +1986,26 @@ export default function App() {
     setPlayer(p => {
       const baseBadgeIds = [...new Set([...p.earnedBadgeIds, 'path-chosen', pathInfo.badgeId])];
       const nextBadgeIds = getBadgeIdsForLevelAndPath(p.level, path, baseBadgeIds);
+      const nextEvolutionStage = getPlayerEvolutionStage({ ...p, selectedInvestmentPath: path, earnedBadgeIds: nextBadgeIds });
+      const gainedBadgeIds = nextBadgeIds.filter(id => !p.earnedBadgeIds.includes(id));
+      const gainedPathMasterBadge = gainedBadgeIds.find(id => PATH_MASTER_BADGE_IDS.includes(id));
+      const gainedInvestmentMasterBadge = gainedBadgeIds.includes(INVESTMENT_MASTER_BADGE_ID);
+      setEvolutionInfo({
+        fromStage: p.currentEvolutionStage,
+        toStage: nextEvolutionStage,
+        investmentPath: path,
+        milestone: gainedInvestmentMasterBadge ? 'investment-master' : gainedPathMasterBadge ? 'path-master' : 'path',
+      });
       return {
         ...p,
         selectedInvestmentPath: path,
-        currentEvolutionStage: getPlayerEvolutionStage({ ...p, selectedInvestmentPath: path, earnedBadgeIds: nextBadgeIds }),
+        currentEvolutionStage: nextEvolutionStage,
         unlockedFeatureIds: [...new Set([...p.unlockedFeatureIds, 'inv-path'])],
         earnedBadgeIds: nextBadgeIds,
       };
     });
     setShowPathModal(false);
     setPathPromptDismissed(false);
-    setEvolutionInfo('specialized-bua');
     showReward(150, 200, `เลือกเส้นทาง ${pathInfo.name} แล้ว!`);
   };
 
@@ -1693,6 +2017,12 @@ export default function App() {
     if (coins > 0) setPlayer(p => ({ ...p, coins: p.coins + coins }));
     setReward({ exp, coins, msg });
     setTimeout(() => setReward(null), 2500);
+  };
+
+  const showMascotBubble = (text: string) => {
+    if (mascotBubbleTimerRef.current) clearTimeout(mascotBubbleTimerRef.current);
+    setMascotBubble({ text, id: Date.now() });
+    mascotBubbleTimerRef.current = setTimeout(() => setMascotBubble(null), 4200);
   };
 
   // ============================================================
@@ -1773,6 +2103,8 @@ export default function App() {
   // ============================================================
   const buyItem = (item: any) => {
     if (player.coins < item.price) { showReward(0, 0, 'Bua Coin ไม่พอ!'); return; }
+    const nextHappy = Math.min(100, player.happy + item.happy);
+    const nextEnergy = Math.min(100, player.energy + item.energy);
     setPlayer(p => ({
       ...p,
       coins: p.coins - item.price,
@@ -1781,6 +2113,9 @@ export default function App() {
       feedCount: p.feedCount + 1,
       completedQuestIds: p.completedQuestIds.includes('q4') ? p.completedQuestIds : [...p.completedQuestIds, 'q4'],
     }));
+    setScreen('home');
+    setModal(null);
+    showMascotBubble(getFeedReaction(nextHappy, nextEnergy));
     showReward(5, 0, `${item.icon} น้องบัวมีความสุขขึ้น!`);
   };
 
@@ -1810,14 +2145,14 @@ export default function App() {
       completedQuestIds: p.completedQuestIds.includes('q6') ? p.completedQuestIds : [...p.completedQuestIds, 'q6'],
     }));
     if (!player.completedQuestIds.includes('q6')) {
-      showReward(0, 0, '🎉 ภารกิจซื้อหุ้นสำเร็จ! ไปรับรางวัลได้');
-    } else { showReward(10, 5, `✅ ซื้อ ${stock.sym} ${qty} หุ้น`); }
+      showReward(0, 0, '🎉 ภารกิจซื้อสินทรัพย์สำเร็จ! ไปรับรางวัลได้');
+    } else { showReward(10, 5, `✅ ซื้อ ${stock.sym} ${qty} หน่วย`); }
     setSelected(null);
   };
 
   const sellStock = (stock: any, qty: number) => {
     const cur = holdings[stock.sym];
-    if (!cur || cur.shares < qty) { showReward(0, 0, '❌ หุ้นไม่พอขาย!'); return; }
+    if (!cur || cur.shares < qty) { showReward(0, 0, '❌ จำนวนสินทรัพย์ไม่พอขาย!'); return; }
     setTradingCash(c => c + stock.price * qty);
     setHoldings(h => {
       const rem = cur.shares - qty;
@@ -1826,7 +2161,7 @@ export default function App() {
     });
     setTradeHistory(hist => [{ type: 'sell', sym: stock.sym, qty, price: stock.price, time: Date.now() }, ...hist]);
     setPlayer(p => ({ ...p, tradeCount: p.tradeCount + 1 }));
-    showReward(10, 5, `💰 ขาย ${stock.sym} ${qty} หุ้น`);
+    showReward(10, 5, `💰 ขาย ${stock.sym} ${qty} หน่วย`);
     setSelected(null);
   };
 
@@ -1839,6 +2174,64 @@ export default function App() {
     setSyncStatus(isSupabaseConfigured ? 'local-only' : 'local-only');
   };
 
+  const resetGameProgress = async () => {
+    const freshPlayer = createDefaultPlayer();
+    const freshState = createSaveState(freshPlayer, INITIAL_TRADING_CASH, {}, []);
+
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    if (portfolioSnapshotTimerRef.current) clearTimeout(portfolioSnapshotTimerRef.current);
+
+    saveGame(freshState);
+    setPlayer(freshPlayer);
+    setTradingCash(INITIAL_TRADING_CASH);
+    setHoldings({});
+    setTradeHistory([]);
+    setSelected(null);
+    setModal(null);
+    setReward(null);
+    setLevelUpInfo(null);
+    setPortfolioUnlockInfo(false);
+    setShowPortfolioTutorial(false);
+    setEvolutionInfo(null);
+    setShowPathModal(false);
+    setPathPromptDismissed(false);
+    setScreen('home');
+
+    if (!supabase || !session || localMode || !cloudLoadedRef.current) {
+      showReward(0, 0, 'รีเซ็ตข้อมูลในเครื่องแล้ว');
+      return;
+    }
+
+    setSyncStatus('saving');
+    try {
+      await saveGameToCloud(session.user.id, freshState);
+      await syncCloudProfileSummary(session.user.id, freshPlayer);
+      try {
+        await savePortfolioSnapshotToCloud(session.user.id, {
+          portfolio_unlocked: false,
+          portfolio_value: INITIAL_TRADING_CASH,
+          return_pct: 0,
+          trade_count: 0,
+        });
+      } catch (snapshotError) {
+        console.warn('Portfolio snapshot reset skipped', snapshotError);
+      }
+      setCloudProfile(profile => profile ? {
+        ...profile,
+        level: freshPlayer.level,
+        selected_investment_path: null,
+        current_evolution_stage: freshPlayer.currentEvolutionStage,
+        coins: freshPlayer.coins,
+      } : profile);
+      setSyncStatus('synced');
+      showReward(0, 0, 'รีเซ็ต Progress และ Cloud Save แล้ว');
+    } catch (error) {
+      console.error('Reset cloud save failed', error);
+      setSyncStatus('error');
+      showReward(0, 0, 'รีเซ็ตในเครื่องแล้ว แต่ Cloud Save ยังไม่สำเร็จ');
+    }
+  };
+
   // ============================================================
   // DEV PANEL
   // ============================================================
@@ -1849,6 +2242,11 @@ export default function App() {
         <button onClick={() => gainExp(100)} className="w-full mb-1 bg-blue-600 rounded-lg py-1 active:scale-95">+100 EXP</button>
         <button onClick={() => gainExp(500)} className="w-full mb-1 bg-blue-700 rounded-lg py-1 active:scale-95">+500 EXP</button>
         <button onClick={() => setPlayer(p => ({ ...p, coins: p.coins + 1000 }))} className="w-full mb-1 bg-yellow-600 rounded-lg py-1 active:scale-95">+1,000 Bua Coin</button>
+        <button onClick={() => setEvolutionInfo({
+          fromStage: 'bua-seed',
+          toStage: 'bua-saver',
+          milestone: 'stage',
+        })} className="w-full mb-1 bg-cyan-600 rounded-lg py-1 active:scale-95">Test Evolution FX</button>
         <button onClick={() => setPlayer(p => {
           const level = p.level + 5;
           const earnedBadgeIds = getBadgeIdsForLevelAndPath(level, p.selectedInvestmentPath, p.earnedBadgeIds);
@@ -1867,16 +2265,30 @@ export default function App() {
           const selectedInvestmentPath = p.selectedInvestmentPath ?? 'dividend-keeper';
           const baseBadgeIds = [...new Set([...p.earnedBadgeIds, 'path-chosen', INVESTMENT_PATHS[selectedInvestmentPath].badgeId])];
           const earnedBadgeIds = getBadgeIdsForLevelAndPath(level, selectedInvestmentPath, baseBadgeIds);
-          return { ...p, level, selectedInvestmentPath, earnedBadgeIds, currentExp: 0, currentEvolutionStage: getPlayerEvolutionStage({ ...p, level, earnedBadgeIds }) };
+          const nextEvolutionStage = getPlayerEvolutionStage({ ...p, level, earnedBadgeIds });
+          setEvolutionInfo({
+            fromStage: p.currentEvolutionStage,
+            toStage: nextEvolutionStage,
+            investmentPath: selectedInvestmentPath,
+            milestone: 'path-master',
+          });
+          return { ...p, level, selectedInvestmentPath, earnedBadgeIds, currentExp: 0, currentEvolutionStage: nextEvolutionStage };
         })} className="w-full mb-1 bg-pink-600 rounded-lg py-1 active:scale-95">Set Lv.50 Path Master</button>
         <button onClick={() => setPlayer(p => {
           const level = Math.max(50, p.level);
           const earnedBadgeIds = [...new Set([...p.earnedBadgeIds, ...PATH_MASTER_BADGE_IDS, INVESTMENT_MASTER_BADGE_ID])];
-          return { ...p, level, earnedBadgeIds, currentExp: 0, currentEvolutionStage: getPlayerEvolutionStage({ ...p, level, earnedBadgeIds }) };
+          const nextEvolutionStage = getPlayerEvolutionStage({ ...p, level, earnedBadgeIds });
+          setEvolutionInfo({
+            fromStage: p.currentEvolutionStage,
+            toStage: nextEvolutionStage,
+            investmentPath: p.selectedInvestmentPath,
+            milestone: 'investment-master',
+          });
+          return { ...p, level, earnedBadgeIds, currentExp: 0, currentEvolutionStage: nextEvolutionStage };
         })} className="w-full mb-1 bg-yellow-700 rounded-lg py-1 active:scale-95">Complete All Masters</button>
         <button onClick={() => setPlayer(p => ({ ...p, completedQuestIds: [...new Set([...p.completedQuestIds, ...MONEY_QUEST_IDS])] }))} className="w-full mb-1 bg-teal-600 rounded-lg py-1 active:scale-95">Complete Money Quests</button>
         <button onClick={() => setPlayer(p => ({ ...p, completedLessonIds: [...new Set([...p.completedLessonIds, ...STOCK101_LESSONS.map(l => l.id)])], earnedBadgeIds: [...new Set([...p.earnedBadgeIds, STOCK101_CHAPTER_BONUS.badgeId])] }))} className="w-full mb-1 bg-indigo-600 rounded-lg py-1 active:scale-95">Complete Stock 101</button>
-        <button onClick={() => { localStorage.removeItem(STORAGE_KEY); window.location.reload(); }} className="w-full bg-red-700 rounded-lg py-1 active:scale-95 flex items-center justify-center gap-1"><RotateCcw size={10}/> Reset All</button>
+        <button onClick={resetGameProgress} className="w-full bg-red-700 rounded-lg py-1 active:scale-95 flex items-center justify-center gap-1"><RotateCcw size={10}/> Reset Progress</button>
       </div>
     );
   };
@@ -1948,13 +2360,28 @@ export default function App() {
           {/* Mascot scene */}
           <div className="relative rounded-3xl overflow-hidden shadow-inner"
             style={{ backgroundImage: `url(${sceneBgImg})`, backgroundSize: 'cover', backgroundPosition: 'center', minHeight: '260px' }}>
-            <div className="absolute top-4 left-3 bg-white rounded-2xl rounded-bl-sm px-3 py-2 shadow-md max-w-[60%] z-10">
-              <div className="text-[11px] text-gray-700 leading-snug">
-                {mood === 'happy' ? `สวัสดี! Lv.${player.level} แล้วนะ พร้อมเรียนรู้ต่อไหม? 😎` : 'หิวจังเลย... ให้อาหารหน่อยน้า 🥺'}
+            <style>{`
+              @keyframes mascot-bubble-bounce-stable {
+                0% { opacity: 1; transform: translateY(14px) scale(.9); }
+                12% { opacity: 1; transform: translateY(-5px) scale(1.04); }
+                22% { opacity: 1; transform: translateY(0) scale(1); }
+                100% { opacity: 1; transform: translateY(0) scale(1); }
+              }
+            `}</style>
+            {mascotBubble && (
+              <div
+                key={mascotBubble.id}
+                className="absolute left-[14px] top-[72px] z-30 w-[160px] min-h-[64px] rounded-[24px] bg-white border-[4px] border-black shadow-2xl flex items-center justify-center text-center px-3 py-2"
+                style={{ animation: 'mascot-bubble-bounce-stable 4.2s cubic-bezier(.16, 1, .3, 1) forwards' }}
+              >
+                <div className="text-[11px] font-bold text-gray-700 leading-snug">
+                  {mascotBubble.text}
+                </div>
+                <div className="absolute -bottom-[28px] right-7 w-0 h-0 border-l-[22px] border-l-transparent border-r-[8px] border-r-transparent border-t-[28px] border-t-black rotate-[-18deg]"/>
+                <div className="absolute -bottom-[19px] right-[38px] w-0 h-0 border-l-[15px] border-l-transparent border-r-[6px] border-r-transparent border-t-[21px] border-t-white rotate-[-18deg]"/>
               </div>
-              <div className="absolute -bottom-1 left-3 w-2 h-2 bg-white transform rotate-45"/>
-            </div>
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10"
+            )}
+            <div className={`absolute ${evoStage === 'bua-saver' && !mascotImageOverride ? '-bottom-4' : evoStage === 'bua-investor' && !mascotImageOverride ? '-bottom-2' : 'bottom-2'} left-1/2 -translate-x-1/2 z-10`}
               style={{ background: 'transparent', animation: 'float 3s ease-in-out infinite' }}>
               <BuaMascot size={160} mood={mood} stage={mascotStage} evolutionStage={evoStage} investmentPath={player.selectedInvestmentPath} imageOverride={mascotImageOverride} imageScale={mascotImageScale} imageOffsetX={mascotImageOffset.x} imageOffsetY={mascotImageOffset.y}/>
             </div>
@@ -2126,19 +2553,36 @@ export default function App() {
     const firstIncomplete = STOCK101_LESSONS.find(l => !player.completedLessonIds.includes(l.id)) ?? STOCK101_LESSONS[0];
     const [activeLessonId, setActiveLessonId] = useState(firstIncomplete.id);
     const [quizOpen, setQuizOpen] = useState(false);
-    const [quizAnswer, setQuizAnswer] = useState<number | null>(null);
+    const [lessonQuizAnswers, setLessonQuizAnswers] = useState<Record<number, number>>({});
+    const [lessonQuizSubmitted, setLessonQuizSubmitted] = useState(false);
+    const lessonDetailRef = useRef<HTMLDivElement | null>(null);
 
     const completedCount = STOCK101_LESSONS.filter(l => player.completedLessonIds.includes(l.id)).length;
     const activeLesson = STOCK101_LESSONS.find(l => l.id === activeLessonId) ?? firstIncomplete;
     const activeIndex = STOCK101_LESSONS.findIndex(l => l.id === activeLesson.id);
     const activeCompleted = player.completedLessonIds.includes(activeLesson.id);
     const activeUnlocked = activeIndex === 0 || player.completedLessonIds.includes(STOCK101_LESSONS[activeIndex - 1]?.id);
+    const activeQuizQuestions = activeLesson.quizQuestions ?? [{
+      question: activeLesson.question,
+      options: activeLesson.options,
+      correct: activeLesson.correct,
+    }];
+    const activePassingScore = activeLesson.passingScore ?? activeQuizQuestions.length;
+    const activeAnsweredCount = activeQuizQuestions.filter((_, index) => lessonQuizAnswers[index] !== undefined).length;
+    const activeQuizScore = activeQuizQuestions.reduce((score, question, index) => (
+      lessonQuizAnswers[index] === question.correct ? score + 1 : score
+    ), 0);
+    const activeQuizPassed = lessonQuizSubmitted && activeQuizScore >= activePassingScore;
 
     const openLesson = (lesson: VideoLesson, unlocked: boolean) => {
       if (!unlocked) return;
       setActiveLessonId(lesson.id);
       setQuizOpen(false);
-      setQuizAnswer(null);
+      setLessonQuizAnswers({});
+      setLessonQuizSubmitted(false);
+      setTimeout(() => {
+        lessonDetailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 80);
     };
 
     const completeVideoLesson = (lesson: VideoLesson) => {
@@ -2173,7 +2617,8 @@ export default function App() {
       if (nextLesson) {
         setActiveLessonId(nextLesson.id);
         setQuizOpen(false);
-        setQuizAnswer(null);
+        setLessonQuizAnswers({});
+        setLessonQuizSubmitted(false);
       } else {
         setQuizOpen(false);
       }
@@ -2250,7 +2695,7 @@ export default function App() {
           })}
         </div>
 
-        <div className="bg-white rounded-3xl shadow-md overflow-hidden border border-blue-100">
+        <div ref={lessonDetailRef} className="bg-white rounded-3xl shadow-md overflow-hidden border border-blue-100 scroll-mt-4">
           {!activeUnlocked ? (
             <div className="p-5 text-center">
               <Lock size={28} className="mx-auto text-gray-300 mb-2"/>
@@ -2329,52 +2774,111 @@ export default function App() {
 
                 {(quizOpen || activeCompleted) && (
                   <div className="border-t pt-4 mt-4">
-                    <div className="font-bold text-gray-800 text-sm mb-2">Quiz หลังบทเรียน</div>
-                    <div className="bg-gray-50 rounded-2xl p-3 text-sm font-medium text-gray-800 mb-3">{activeLesson.question}</div>
-                    <div className="space-y-2">
-                      {activeLesson.options.map((option, index) => {
-                        const selectedAnswer = quizAnswer === index;
-                        const showResult = activeCompleted || quizAnswer !== null;
-                        const correctAnswer = index === activeLesson.correct;
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div>
+                        <div className="font-bold text-gray-800 text-sm">Quiz หลังบทเรียน</div>
+                        <div className="text-[11px] text-gray-500">
+                          ตอบให้ครบ {activeQuizQuestions.length} ข้อ แล้วระบบจะเฉลยพร้อมกัน ต้องถูกอย่างน้อย {activePassingScore}/{activeQuizQuestions.length}
+                        </div>
+                      </div>
+                      <div className="bg-blue-50 text-blue-600 rounded-full px-2.5 py-1 text-[10px] font-black shrink-0">
+                        {activeCompleted ? 'ผ่านแล้ว' : `${activeAnsweredCount}/${activeQuizQuestions.length}`}
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      {activeQuizQuestions.map((question, questionIndex) => {
+                        const selectedOption = lessonQuizAnswers[questionIndex];
+                        const showResult = activeCompleted || lessonQuizSubmitted;
                         return (
-                          <button key={option} disabled={activeCompleted}
-                            onClick={() => setQuizAnswer(index)}
-                            className={`w-full text-left rounded-2xl p-3 border-2 text-sm transition ${
-                              showResult && correctAnswer ? 'bg-green-50 border-green-400 text-green-700' :
-                              showResult && selectedAnswer && !correctAnswer ? 'bg-red-50 border-red-400 text-red-700' :
-                              selectedAnswer ? 'bg-blue-50 border-blue-400 text-blue-700' :
-                              'bg-white border-gray-100 text-gray-700'
-                            }`}>
-                            <div className="flex items-center gap-2">
-                              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-                                showResult && correctAnswer ? 'bg-green-500 text-white' :
-                                showResult && selectedAnswer && !correctAnswer ? 'bg-red-500 text-white' :
-                                selectedAnswer ? 'bg-blue-500 text-white' :
-                                'bg-gray-100 text-gray-500'
-                              }`}>
-                                {String.fromCharCode(65 + index)}
+                          <div key={`${activeLesson.id}-q-${questionIndex}`} className="bg-gray-50 rounded-2xl p-3 border border-gray-100">
+                            <div className="flex items-start gap-2 mb-3">
+                              <div className="w-7 h-7 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-black shrink-0">
+                                {questionIndex + 1}
                               </div>
-                              <span>{option}</span>
+                              <div className="text-sm font-bold text-gray-800 leading-relaxed">{question.question}</div>
                             </div>
-                          </button>
+                            <div className="space-y-2">
+                              {question.options.map((option, optionIndex) => {
+                                const selectedAnswer = selectedOption === optionIndex;
+                                const correctAnswer = optionIndex === question.correct;
+                                return (
+                                  <button
+                                    key={option}
+                                    disabled={activeCompleted || lessonQuizSubmitted}
+                                    onClick={() => setLessonQuizAnswers(prev => ({ ...prev, [questionIndex]: optionIndex }))}
+                                    className={`w-full text-left rounded-2xl p-3 border-2 text-sm transition ${
+                                      showResult && correctAnswer ? 'bg-green-50 border-green-400 text-green-700' :
+                                      showResult && selectedAnswer && !correctAnswer ? 'bg-red-50 border-red-400 text-red-700' :
+                                      selectedAnswer ? 'bg-blue-50 border-blue-400 text-blue-700' :
+                                      'bg-white border-gray-100 text-gray-700'
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                                        showResult && correctAnswer ? 'bg-green-500 text-white' :
+                                        showResult && selectedAnswer && !correctAnswer ? 'bg-red-500 text-white' :
+                                        selectedAnswer ? 'bg-blue-500 text-white' :
+                                        'bg-gray-100 text-gray-500'
+                                      }`}>
+                                        {String.fromCharCode(65 + optionIndex)}
+                                      </div>
+                                      <span>{option}</span>
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
                         );
                       })}
                     </div>
 
-                    {!activeCompleted && quizAnswer !== null && (
-                      quizAnswer === activeLesson.correct ? (
-                        <button onClick={() => completeVideoLesson(activeLesson)}
-                          className="w-full mt-4 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold py-3 rounded-full shadow active:scale-95">
-                          {activeLesson.order === STOCK101_LESSONS.length
-                            ? `รับรางวัลรวม +${activeLesson.exp + STOCK101_CHAPTER_BONUS.exp}⭐ +${activeLesson.coins + STOCK101_CHAPTER_BONUS.coins} Coin`
-                            : `รับรางวัล +${activeLesson.exp}⭐ +${activeLesson.coins} Coin และปลดล็อกต่อไป`}
-                        </button>
-                      ) : (
-                        <button onClick={() => setQuizAnswer(null)}
-                          className="w-full mt-4 bg-orange-500 text-white font-bold py-3 rounded-full shadow active:scale-95">
-                          ยังไม่ถูก ลองตอบใหม่อีกครั้ง
-                        </button>
-                      )
+                    {!activeCompleted && !lessonQuizSubmitted && (
+                      <button
+                        onClick={() => setLessonQuizSubmitted(true)}
+                        disabled={activeAnsweredCount < activeQuizQuestions.length}
+                        className={`w-full mt-4 font-bold py-3 rounded-full shadow active:scale-95 ${
+                          activeAnsweredCount < activeQuizQuestions.length
+                            ? 'bg-gray-200 text-gray-400'
+                            : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                        }`}
+                      >
+                        {activeAnsweredCount < activeQuizQuestions.length
+                          ? `ตอบให้ครบก่อน (${activeAnsweredCount}/${activeQuizQuestions.length})`
+                          : 'ส่งคำตอบและดูเฉลย'}
+                      </button>
+                    )}
+
+                    {!activeCompleted && lessonQuizSubmitted && (
+                      <div className={`mt-4 rounded-2xl p-3 border ${activeQuizPassed ? 'bg-green-50 border-green-200' : 'bg-orange-50 border-orange-200'}`}>
+                        <div className={`font-black text-sm ${activeQuizPassed ? 'text-green-700' : 'text-orange-700'}`}>
+                          คะแนนของคุณ: {activeQuizScore}/{activeQuizQuestions.length}
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1">
+                          {activeQuizPassed
+                            ? 'ผ่านแล้ว! รับรางวัลและปลดล็อกบทเรียนถัดไปได้เลย'
+                            : `ยังไม่ผ่าน ต้องถูกอย่างน้อย ${activePassingScore}/${activeQuizQuestions.length} ลองทบทวนคลิปแล้วทำใหม่อีกครั้งนะ`}
+                        </div>
+                        {activeQuizPassed ? (
+                          <button onClick={() => completeVideoLesson(activeLesson)}
+                            className="w-full mt-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold py-3 rounded-full shadow active:scale-95">
+                            {activeLesson.order === STOCK101_LESSONS.length
+                              ? `รับรางวัลรวม +${activeLesson.exp + STOCK101_CHAPTER_BONUS.exp}⭐ +${activeLesson.coins + STOCK101_CHAPTER_BONUS.coins} Coin`
+                              : `รับรางวัล +${activeLesson.exp}⭐ +${activeLesson.coins} Coin และปลดล็อกต่อไป`}
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setLessonQuizAnswers({});
+                              setLessonQuizSubmitted(false);
+                            }}
+                            className="w-full mt-3 bg-orange-500 text-white font-bold py-3 rounded-full shadow active:scale-95"
+                          >
+                            ทำ Quiz ใหม่
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
                 )}
@@ -2513,7 +3017,13 @@ export default function App() {
     }
 
     // Unlocked — full trading UI
-    const filtered = stocks.filter(s => s.cat === cat);
+    const filtered = stocks.filter(s => {
+      if (cat === 'all') return true;
+      if (cat === 'my-path') {
+        return player.selectedInvestmentPath ? s.pathTags.includes(player.selectedInvestmentPath) : true;
+      }
+      return s.cat === cat;
+    });
     const nextMarketUpdateLabel = new Date(getNextMarketTickTime(marketTick)).toLocaleTimeString('th-TH', {
       hour: '2-digit',
       minute: '2-digit',
@@ -2538,10 +3048,14 @@ export default function App() {
               </div>
             </div>
             <div className="mt-1 text-[11px] opacity-80">
-              กำไร/ขาดทุนของหุ้นที่ถือ: {totalPnL >= 0 ? '+' : ''}{fmt(totalPnL)} บาท ({totalPnLPct >= 0 ? '+' : ''}{fmt(totalPnLPct)}%)
+              กำไร/ขาดทุนของสินทรัพย์ที่ถือ: {totalPnL >= 0 ? '+' : ''}{fmt(totalPnL)} บาท ({totalPnLPct >= 0 ? '+' : ''}{fmt(totalPnLPct)}%)
             </div>
             <div className="mt-1 text-[10px] opacity-70">
               Ranking ใช้สูตร Return รวมเทียบเงินต้น {fmt(INITIAL_TRADING_CASH, 0)} บาท
+            </div>
+            <div className="mt-3 bg-amber-100/95 text-amber-900 rounded-xl px-3 py-2 text-[10px] leading-relaxed font-medium">
+              ⚠️ ราคาสินทรัพย์ใน Portfolio Simulation เป็น Mock Up สำหรับ Prototype เท่านั้น
+              ไม่ได้ขยับตามราคาตลาดจริง และไม่ใช่คำแนะนำการลงทุน
             </div>
             <div className="mt-3 bg-white/15 rounded-xl p-2">
               <div className="flex items-center justify-between text-xs mb-1">
@@ -2565,25 +3079,39 @@ export default function App() {
         </div>
         {investTab === 'market' && (
           <div className="pb-4">
-            <div className="flex gap-2 px-4 py-3">
-              <button onClick={() => setCat('us')} className={`px-4 py-1.5 rounded-full text-xs font-bold ${cat === 'us' ? 'bg-purple-600 text-white' : 'bg-white text-gray-600 border'}`}>หุ้นสหรัฐฯ</button>
-              <button onClick={() => setCat('th')} className={`px-4 py-1.5 rounded-full text-xs font-bold ${cat === 'th' ? 'bg-purple-600 text-white' : 'bg-white text-gray-600 border'}`}>หุ้นไทย</button>
+            <div className="flex gap-2 px-4 py-3 overflow-x-auto no-scrollbar">
+              {ASSET_FILTERS.map(f => (
+                <button
+                  key={f.id}
+                  onClick={() => setCat(f.id)}
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap ${cat === f.id ? 'bg-purple-600 text-white' : 'bg-white text-gray-600 border'}`}
+                >
+                  {f.label}
+                </button>
+              ))}
             </div>
             <div className="px-3 space-y-1">
               {filtered.map(s => {
                 const up = s.changePct >= 0;
+                const pathMatch = player.selectedInvestmentPath && s.pathTags.includes(player.selectedInvestmentPath);
                 return (
                   <button key={s.sym} onClick={() => { setSelected(s); setTradeQty(1); }} className="w-full bg-white rounded-2xl p-3 flex items-center gap-3 shadow-sm active:scale-98 transition">
                     <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-lg flex-shrink-0">{s.logo}</div>
-                    <div className="text-left w-20 flex-shrink-0">
+                    <div className="text-left w-24 flex-shrink-0">
                       <div className="font-bold text-gray-800 text-sm">{s.sym}</div>
                       <div className="text-[10px] text-gray-400 truncate">{s.name}</div>
+                      <div className="flex items-center gap-1 mt-1">
+                        <span className="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">{s.assetType}</span>
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${ASSET_RISK_BADGE[s.risk]}`}>{s.risk}</span>
+                      </div>
+                      {pathMatch && <div className="text-[9px] text-purple-600 font-bold mt-0.5">เหมาะกับสายของฉัน</div>}
                     </div>
                     <div className="flex-1 h-9">
                       <ResponsiveContainer><LineChart data={s.spark}><YAxis domain={['dataMin','dataMax']} hide/><Line type="monotone" dataKey="v" stroke={up ? '#10B981' : '#EF4444'} strokeWidth={1.5} dot={false}/></LineChart></ResponsiveContainer>
                     </div>
                     <div className="text-right flex-shrink-0">
                       <div className="font-bold text-gray-800 text-sm">{fmt(s.price)}</div>
+                      <div className="text-[9px] text-gray-400">{s.currency}</div>
                       <div className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${up ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>{up ? '↗ +' : '↘ '}{fmt(s.changePct)}%</div>
                     </div>
                   </button>
@@ -2595,7 +3123,7 @@ export default function App() {
         {investTab === 'portfolio' && (
           <div className="p-4 space-y-3">
             {Object.keys(holdings).length === 0
-              ? <div className="text-center text-gray-400 py-16"><PieIcon size={48} className="mx-auto mb-3 opacity-30"/><div className="text-sm">ยังไม่มีหุ้นในพอร์ต</div></div>
+              ? <div className="text-center text-gray-400 py-16"><PieIcon size={48} className="mx-auto mb-3 opacity-30"/><div className="text-sm">ยังไม่มีสินทรัพย์ในพอร์ต</div></div>
               : Object.entries(holdings).map(([sym, h]) => {
                   const st = stocks.find(s => s.sym === sym); if (!st) return null;
                   const val = st.price * h.shares, cost2 = h.avgCost * h.shares, pnl = val - cost2, pct = (pnl/cost2)*100, up = pnl >= 0;
@@ -2603,7 +3131,7 @@ export default function App() {
                     <button key={sym} onClick={() => { setSelected(st); setTradeQty(1); }} className="w-full bg-white rounded-2xl p-3 shadow-sm text-left active:scale-98">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">{st.logo}</div>
-                        <div className="flex-1"><div className="font-bold text-gray-800 text-sm">{sym}</div><div className="text-[10px] text-gray-400">{h.shares} หุ้น @ {fmt(h.avgCost)}</div></div>
+                        <div className="flex-1"><div className="font-bold text-gray-800 text-sm">{sym}</div><div className="text-[10px] text-gray-400">{h.shares} หน่วย @ {fmt(h.avgCost)}</div></div>
                         <div className="text-right"><div className="font-bold text-sm">{fmt(val)}</div><div className={`text-[11px] font-bold ${up ? 'text-green-600' : 'text-red-500'}`}>{up?'+':''}{fmt(pnl)} ({up?'+':''}{fmt(pct)}%)</div></div>
                       </div>
                     </button>
@@ -2618,13 +3146,15 @@ export default function App() {
               : tradeHistory.map((t, i) => (
                   <div key={i} className="bg-white rounded-xl p-3 flex items-center gap-3 shadow-sm">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${t.type==='buy' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-500'}`}>{t.type==='buy'?'ซื้อ':'ขาย'}</div>
-                    <div className="flex-1"><div className="font-bold text-sm">{t.sym}</div><div className="text-[10px] text-gray-400">{t.qty} หุ้น @ {fmt(t.price)}</div></div>
+                    <div className="flex-1"><div className="font-bold text-sm">{t.sym}</div><div className="text-[10px] text-gray-400">{t.qty} หน่วย @ {fmt(t.price)}</div></div>
                     <div className="font-bold text-sm">{fmt(t.price*t.qty)}</div>
                   </div>
                 ))}
           </div>
         )}
-        <div className="px-4 py-2 text-[9px] text-amber-700 text-center bg-amber-50">⚠️ ข้อมูลจำลองเพื่อการศึกษาเท่านั้น ไม่ใช่คำแนะนำการลงทุนจริง</div>
+        <div className="px-4 py-2 text-[9px] text-amber-700 text-center bg-amber-50">
+          ⚠️ ราคาและผลตอบแทนในเกมเป็น Mock Up เพื่อการเรียนรู้เท่านั้น ไม่ได้อ้างอิงการเคลื่อนไหวจริงแบบ real-time
+        </div>
       </div>
     );
   };
@@ -3318,24 +3848,31 @@ export default function App() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-xl">{selected.logo}</div>
-              <div><div className="font-bold text-gray-800">{selected.sym}</div><div className="text-xs text-gray-400">{selected.name}</div></div>
+              <div>
+                <div className="font-bold text-gray-800">{selected.sym}</div>
+                <div className="text-xs text-gray-400">{selected.name}</div>
+                <div className="flex items-center gap-1 mt-1">
+                  <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">{selected.assetType}</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${ASSET_RISK_BADGE[selected.risk]}`}>{selected.risk}</span>
+                </div>
+              </div>
             </div>
             <button onClick={() => setSelected(null)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"><X size={16}/></button>
           </div>
           <div className="bg-gray-50 rounded-2xl p-3 mb-4">
-            <div className="text-2xl font-bold text-gray-800">{fmt(selected.price)} <span className="text-xs text-gray-400">บาท</span></div>
-            <div className={`text-xs font-bold ${selected.changePct >= 0 ? 'text-green-600' : 'text-red-500'}`}>{selected.changePct >= 0 ? '↗ +' : '↘ '}{fmt(selected.changePct)}% วันนี้</div>
+            <div className="text-2xl font-bold text-gray-800">{fmt(selected.price)} <span className="text-xs text-gray-400">{selected.currency}</span></div>
+            <div className={`text-xs font-bold ${selected.changePct >= 0 ? 'text-green-600' : 'text-red-500'}`}>{selected.changePct >= 0 ? '↗ +' : '↘ '}{fmt(selected.changePct)}% รอบ 5 นาทีนี้</div>
+            <div className="text-[11px] text-gray-500 mt-1">{selected.desc}</div>
             <div className="h-24 mt-1"><ResponsiveContainer><LineChart data={selected.spark}><YAxis domain={['dataMin','dataMax']} hide/><Line type="monotone" dataKey="v" stroke={selected.changePct >= 0 ? '#10B981' : '#EF4444'} strokeWidth={2} dot={false}/></LineChart></ResponsiveContainer></div>
           </div>
-          {holdings[selected.sym] && <div className="bg-purple-50 rounded-xl p-2.5 mb-3 text-xs text-purple-700 flex justify-between"><span>ถืออยู่ {holdings[selected.sym].shares} หุ้น</span><span>ต้นทุน {fmt(holdings[selected.sym].avgCost)}</span></div>}
           {selectedHolding ? (
             <div className="bg-purple-50 rounded-xl p-2.5 mb-3 text-xs text-purple-700 flex justify-between">
-              <span>ถืออยู่ {selectedHolding.shares} หุ้น</span>
+              <span>ถืออยู่ {selectedHolding.shares} หน่วย</span>
               <span>ต้นทุน {fmt(selectedHolding.avgCost)}</span>
             </div>
           ) : null}
           <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-bold text-gray-700">จำนวนหุ้น</span>
+            <span className="text-sm font-bold text-gray-700">จำนวนหน่วย</span>
             <div className="flex items-center gap-3">
               <button onClick={() => setTradeQty(q => Math.max(1, q-1))} className="w-9 h-9 rounded-full bg-gray-100 font-bold text-lg active:scale-95">−</button>
               <span className="font-bold text-lg w-10 text-center">{tradeQty}</span>
@@ -3344,7 +3881,6 @@ export default function App() {
           </div>
           <div className="text-center text-sm text-gray-500 mb-3">รวม <span className="font-bold text-gray-800">{fmt(selected.price * tradeQty)} บาท</span></div>
           <div className="flex gap-3">
-            <button onClick={() => sellStock(selected, tradeQty)} disabled={!holdings[selected.sym]} className={`flex-1 py-3 rounded-full font-bold ${holdings[selected.sym] ? 'bg-red-500 text-white active:scale-95' : 'bg-gray-200 text-gray-400'}`}>ขาย</button>
             <button onClick={() => sellStock(selected, tradeQty)} disabled={!selectedHolding} className={`flex-1 py-3 rounded-full font-bold ${selectedHolding ? 'bg-red-500 text-white active:scale-95' : 'bg-gray-200 text-gray-400'}`}>ขาย</button>
             <button onClick={() => buyStock(selected, tradeQty)} className="flex-1 py-3 rounded-full font-bold bg-green-500 text-white active:scale-95">ซื้อ</button>
           </div>
@@ -3428,7 +3964,15 @@ export default function App() {
         )}
 
         {evolutionInfo && (
-          <EvolutionModal stage={evolutionInfo} onClose={() => setEvolutionInfo(null)} imageOverride={mascotImageOverride} imageScale={mascotImageScale} imageOffsetX={modalMascotImageOffset.x} imageOffsetY={modalMascotImageOffset.y} investmentPath={player.selectedInvestmentPath}/>
+          <EvolutionCutscene
+            cutscene={evolutionInfo}
+            onClose={() => setEvolutionInfo(null)}
+            imageOverride={mascotImageOverride}
+            imageScale={mascotImageScale}
+            imageOffsetX={modalMascotImageOffset.x}
+            imageOffsetY={modalMascotImageOffset.y}
+            investmentPath={player.selectedInvestmentPath}
+          />
         )}
 
         {showPathModal && !player.selectedInvestmentPath && (
