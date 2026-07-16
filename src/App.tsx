@@ -1442,6 +1442,164 @@ const EvolutionCutscene = ({
   );
 };
 
+const InvestmentMasterEvolutionCutscene = ({
+  cutscene,
+  onClose,
+  imageOverride,
+  imageScale,
+  imageOffsetX,
+  imageOffsetY,
+}: {
+  cutscene: EvolutionCutsceneState;
+  onClose: () => void;
+  imageOverride?: string;
+  imageScale?: number;
+  imageOffsetX?: number;
+  imageOffsetY?: number;
+}) => {
+  const pathOrbs = [
+    { icon: '🔎', name: 'Value', angle: -90, color: 'from-amber-300 to-orange-400' },
+    { icon: '🌏', name: 'Global', angle: -30, color: 'from-sky-300 to-blue-500' },
+    { icon: '🛡️', name: 'Risk', angle: 30, color: 'from-cyan-300 to-slate-500' },
+    { icon: '💎', name: 'Dividend', angle: 90, color: 'from-emerald-300 to-yellow-300' },
+    { icon: '⚡', name: 'Trader', angle: 150, color: 'from-purple-300 to-pink-500' },
+    { icon: '🌿', name: 'ESG', angle: 210, color: 'from-lime-300 to-green-500' },
+  ];
+  const goldParticles = Array.from({ length: 42 }, (_, i) => ({
+    id: i,
+    left: 5 + ((i * 23) % 90),
+    delay: (i % 12) * 0.12,
+    duration: 2.4 + (i % 7) * 0.18,
+    size: 10 + (i % 5) * 4,
+  }));
+  const badgeParticles = Array.from({ length: 12 }, (_, i) => ({
+    id: i,
+    angle: i * 30,
+    delay: 2.2 + (i % 4) * 0.08,
+  }));
+
+  return (
+    <div className="fixed inset-0 z-[82] flex items-center justify-center p-3 overflow-hidden bg-[#08050f]">
+      <style>{`
+        @keyframes im-gold-fade { 0% { opacity: 0; } 16% { opacity: 1; } 100% { opacity: 1; } }
+        @keyframes im-sunburst { 0% { transform: translate(-50%, -50%) scale(.28) rotate(0deg); opacity: 0; filter: blur(18px); } 22% { opacity: .98; } 100% { transform: translate(-50%, -50%) scale(1.22) rotate(38deg); opacity: .44; filter: blur(0); } }
+        @keyframes im-ring { 0% { transform: translate(-50%, -50%) rotate(0deg) scale(.55); opacity: 0; } 25% { opacity: 1; } 100% { transform: translate(-50%, -50%) rotate(360deg) scale(1.18); opacity: .72; } }
+        @keyframes im-path-orbit { 0% { transform: rotate(var(--angle)) translateX(180px) rotate(calc(var(--angle) * -1)) scale(.25); opacity: 0; filter: blur(8px); } 24% { opacity: 1; filter: blur(0); } 58% { transform: rotate(calc(var(--angle) + 360deg)) translateX(180px) rotate(calc((var(--angle) + 360deg) * -1)) scale(1); opacity: 1; } 76% { transform: rotate(calc(var(--angle) + 500deg)) translateX(26px) rotate(calc((var(--angle) + 500deg) * -1)) scale(.72); opacity: .95; } 100% { transform: rotate(calc(var(--angle) + 540deg)) translateX(0) rotate(calc((var(--angle) + 540deg) * -1)) scale(.15); opacity: 0; } }
+        @keyframes im-master-reveal { 0%, 48% { transform: translateY(36px) scale(.12); opacity: 0; filter: brightness(4) blur(18px); } 61% { opacity: 1; transform: translateY(-30px) scale(1.32); filter: brightness(2.4) blur(0); } 74% { transform: translateY(8px) scale(.92); } 88% { transform: translateY(-6px) scale(1.06); } 100% { transform: translateY(0) scale(1); opacity: 1; filter: brightness(1.08) drop-shadow(0 0 28px rgba(255,215,80,.95)); } }
+        @keyframes im-white-flash { 0%, 52% { opacity: 0; } 57% { opacity: .98; } 70%, 100% { opacity: 0; } }
+        @keyframes im-gold-float { 0% { transform: translateY(130px) rotate(0deg) scale(.6); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(-330px) rotate(260deg) scale(1.15); opacity: 0; } }
+        @keyframes im-badge-card { 0%, 72% { transform: translateY(34px) scale(.92); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+        @keyframes im-badge-spark { 0%, 70% { transform: rotate(var(--spark-angle)) translateX(0) scale(.25); opacity: 0; } 82% { opacity: 1; } 100% { transform: rotate(var(--spark-angle)) translateX(82px) scale(1); opacity: 0; } }
+        @keyframes im-shine { 0% { transform: translateX(-120%) skewX(-18deg); opacity: 0; } 35% { opacity: .9; } 100% { transform: translateX(220%) skewX(-18deg); opacity: 0; } }
+      `}</style>
+
+      <div className="absolute inset-0 bg-gradient-to-br from-black via-[#1b1028] to-[#2a1500]"/>
+      <div className="absolute inset-0 opacity-80" style={{ animation: 'im-gold-fade 1.2s ease-out forwards' }}>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,232,132,.42),transparent_36%)]"/>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(255,255,255,.22),transparent_30%)]"/>
+      </div>
+
+      {goldParticles.map(p => (
+        <div
+          key={p.id}
+          className="absolute bottom-[-40px] text-yellow-200 pointer-events-none drop-shadow-[0_0_10px_rgba(255,219,90,.95)]"
+          style={{
+            left: `${p.left}%`,
+            fontSize: p.size,
+            animation: `im-gold-float ${p.duration}s ease-in-out ${p.delay}s infinite`,
+          }}
+        >
+          {p.id % 5 === 0 ? '👑' : p.id % 5 === 1 ? '✦' : p.id % 5 === 2 ? '✨' : p.id % 5 === 3 ? '🌟' : '❋'}
+        </div>
+      ))}
+
+      <div className="relative w-full max-w-md min-h-[720px] rounded-[2.2rem] overflow-hidden shadow-[0_0_70px_rgba(255,210,80,.55)] border border-yellow-200/50 bg-gradient-to-b from-white/12 via-yellow-50/10 to-black/20 backdrop-blur-xl">
+        <div className="absolute top-[250px] left-1/2 w-[520px] h-[520px] rounded-full bg-[conic-gradient(from_0deg,transparent,rgba(255,230,130,.95),transparent,rgba(255,255,255,.72),transparent)]" style={{ animation: 'im-sunburst 4.6s ease-out forwards' }}/>
+        <div className="absolute top-[250px] left-1/2 w-[330px] h-[330px] rounded-full border-[5px] border-yellow-200/70 border-dashed" style={{ animation: 'im-ring 4.4s linear infinite' }}/>
+        <div className="absolute top-[250px] left-1/2 w-[230px] h-[230px] rounded-full border border-white/70" style={{ animation: 'im-ring 3.2s linear infinite reverse' }}/>
+
+        <div className="relative z-20 text-center px-6 pt-7">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-yellow-100 text-yellow-800 text-xs font-black shadow-[0_0_22px_rgba(255,222,90,.8)] border border-yellow-300">
+            👑 FINAL EVOLUTION
+          </div>
+          <div className="mt-4 text-[38px] leading-none font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-white to-yellow-400 drop-shadow-[0_4px_18px_rgba(255,216,94,.75)]">
+            Investment Master
+          </div>
+          <div className="mt-2 text-xs font-bold text-yellow-50/95 drop-shadow">
+            รวมพลังครบทุกเส้นทางการลงทุน
+          </div>
+        </div>
+
+        <div className="absolute top-[250px] left-1/2 z-20">
+          {pathOrbs.map((orb, i) => (
+            <div
+              key={orb.name}
+              className={`absolute -left-8 -top-8 w-16 h-16 rounded-full bg-gradient-to-br ${orb.color} flex items-center justify-center text-2xl shadow-[0_0_24px_rgba(255,255,255,.65)] border-2 border-white/75`}
+              style={{
+                ['--angle' as any]: `${orb.angle}deg`,
+                animation: `im-path-orbit 3.35s cubic-bezier(.18,.85,.18,1) ${i * 0.08}s forwards`,
+              }}
+            >
+              <span>{orb.icon}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="absolute inset-0 z-30 bg-white pointer-events-none" style={{ animation: 'im-white-flash 4.4s ease-out forwards' }}/>
+
+        <div className="absolute top-[174px] left-1/2 -translate-x-1/2 z-40 w-[330px] h-[330px] flex items-center justify-center">
+          <div style={{ animation: 'im-master-reveal 4.4s ease-out forwards' }}>
+            <BuaMascot
+              size={250}
+              mood="happy"
+              stage={getEvolutionMascotStage(cutscene.toStage)}
+              evolutionStage="investment-master"
+              imageOverride={imageOverride}
+              imageScale={imageScale ?? 1}
+              imageOffsetX={imageOffsetX ?? 0}
+              imageOffsetY={imageOffsetY ?? 0}
+            />
+          </div>
+        </div>
+
+        <div className="absolute left-5 right-5 bottom-5 z-50" style={{ animation: 'im-badge-card 4.5s ease-out forwards' }}>
+          <div className="relative overflow-hidden rounded-[1.7rem] border border-yellow-200 bg-white/95 p-5 text-center shadow-[0_0_36px_rgba(255,205,70,.65)]">
+            <div className="absolute inset-y-0 w-24 bg-gradient-to-r from-transparent via-white/80 to-transparent" style={{ animation: 'im-shine 2.2s ease-in-out 4.2s infinite' }}/>
+            {badgeParticles.map(p => (
+              <div
+                key={p.id}
+                className="absolute left-1/2 top-10 text-yellow-400"
+                style={{
+                  ['--spark-angle' as any]: `${p.angle}deg`,
+                  animation: `im-badge-spark 1.4s ease-out ${p.delay}s infinite`,
+                }}
+              >
+                ✦
+              </div>
+            ))}
+            <div className="text-[11px] font-black text-yellow-700">🏆 BADGE UNLOCKED</div>
+            <div className="mt-1 text-2xl font-black text-gray-900">Investment Master</div>
+            <div className="mt-2 text-sm leading-relaxed text-gray-600">
+              คุณได้รับ Master Badge ครบทุก Path และปลดล็อกร่างสูงสุดของน้องบัวแล้ว
+            </div>
+            <div className="mt-4 grid grid-cols-3 gap-2 text-[10px] font-black">
+              <div className="rounded-2xl bg-yellow-50 p-2 text-yellow-700">All Paths</div>
+              <div className="rounded-2xl bg-blue-50 p-2 text-blue-600">Final Form</div>
+              <div className="rounded-2xl bg-pink-50 p-2 text-pink-600">Crown Aura</div>
+            </div>
+            <button
+              onClick={onClose}
+              className="mt-4 w-full rounded-full bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500 py-3 font-black text-white shadow-[0_8px_24px_rgba(245,158,11,.45)] active:scale-95"
+            >
+              รับพลัง Master 👑
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const SimpleStageEvolutionCutscene = ({
   cutscene,
   onClose,
@@ -1981,6 +2139,38 @@ export default function App() {
     ? { mascot: TRADING_MASTER_IMG, background: BG_TRADING_MASTER_IMG }
     : null;
   const isInvestmentMaster = evoStage === 'investment-master';
+  const isMasterTheme = isInvestmentMaster;
+  const appTheme = {
+    pageBg: isMasterTheme
+      ? 'bg-gradient-to-b from-amber-50 via-yellow-50 to-orange-50'
+      : 'bg-gradient-to-b from-sky-50 to-white',
+    shellBg: isMasterTheme
+      ? 'bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50'
+      : 'bg-gradient-to-br from-sky-100 via-blue-50 to-pink-50',
+    surface: isMasterTheme
+      ? 'bg-white/85 border border-amber-100 shadow-[0_12px_34px_rgba(217,119,6,.13)]'
+      : 'bg-white border border-gray-100 shadow-sm',
+    surfaceStrong: isMasterTheme
+      ? 'bg-white/90 border border-amber-200 shadow-[0_14px_36px_rgba(217,119,6,.16)]'
+      : 'bg-white border border-blue-100 shadow-md',
+    primary: isMasterTheme
+      ? 'bg-gradient-to-r from-amber-400 via-yellow-500 to-orange-500'
+      : 'bg-gradient-to-r from-blue-500 to-blue-600',
+    header: isMasterTheme
+      ? 'bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-500'
+      : 'bg-gradient-to-br from-blue-500 to-indigo-600',
+    headerAlt: isMasterTheme
+      ? 'bg-gradient-to-br from-amber-500 via-yellow-500 to-orange-500'
+      : 'bg-gradient-to-br from-purple-500 to-indigo-600',
+    activeTab: isMasterTheme ? 'bg-amber-500 text-white shadow' : 'bg-blue-500 text-white shadow',
+    activeText: isMasterTheme ? 'text-amber-600' : 'text-blue-500',
+    accentText: isMasterTheme ? 'text-amber-700' : 'text-blue-600',
+    titleText: isMasterTheme ? 'text-amber-950' : 'text-gray-800',
+    mutedText: isMasterTheme ? 'text-amber-700/75' : 'text-gray-500',
+    softPanel: isMasterTheme
+      ? 'bg-amber-50/75 border border-amber-100'
+      : 'bg-blue-50 border border-blue-100',
+  };
   const mascotImageOverride = isInvestmentMaster ? undefined : selectedPathMasterAssets?.mascot;
   const mascotImageScale = isInvestmentMaster ? 1.0
     : (selectedPathMasterAssets && player.selectedInvestmentPath === 'value-hunter') ? 2.40
@@ -2022,6 +2212,7 @@ export default function App() {
     ? { x: -11, y: 200 }
     : profileMascotImageOffset;
   const evolutionFxImageScale = isInvestmentMaster ? 1.0
+    : selectedPathMasterAssets && player.selectedInvestmentPath === 'value-hunter' ? 2.10
     : selectedPathMasterAssets ? 1.72
     : mascotImageScale;
   const evolutionFxImageOffset = isInvestmentMaster
@@ -2540,12 +2731,14 @@ export default function App() {
   // ============================================================
   // STAT PILL
   // ============================================================
-  const StatPill = ({ icon: Icon, color, label, value, max }: any) => (
-    <div className="flex items-center gap-1.5 bg-white rounded-xl px-2.5 py-1.5 shadow-sm flex-1">
+  const StatPill = ({ icon: Icon, color, label, value, max, master = false }: any) => (
+    <div className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 shadow-sm flex-1 ${
+      master ? 'bg-white/85 border border-amber-100 shadow-[0_8px_22px_rgba(217,119,6,.10)]' : 'bg-white'
+    }`}>
       <Icon size={16} className={color} fill="currentColor"/>
       <div className="flex-1 min-w-0">
-        <div className="text-[10px] text-gray-500 leading-none">{label}</div>
-        <div className="text-xs font-bold text-gray-800 leading-tight">{value}{max && <span className="text-gray-400 font-normal"> / {max}</span>}</div>
+        <div className={`text-[10px] leading-none ${master ? 'text-amber-700/75' : 'text-gray-500'}`}>{label}</div>
+        <div className={`text-xs font-bold leading-tight ${master ? 'text-amber-950' : 'text-gray-800'}`}>{value}{max && <span className={`${master ? 'text-amber-700/50' : 'text-gray-400'} font-normal`}> / {max}</span>}</div>
       </div>
     </div>
   );
@@ -2622,44 +2815,79 @@ export default function App() {
   const HomeScreen = () => {
     const availQuests = QUESTS.filter(q => ['available', 'in-progress', 'reward'].includes(getQuestStatus(q)));
     const nextQuest = availQuests[0];
+    const isMasterHome = evoStage === 'investment-master';
+    const masterCardClass = isMasterHome
+      ? 'bg-white/85 border border-amber-100 shadow-[0_12px_34px_rgba(217,119,6,.13)]'
+      : 'bg-white shadow-md';
+    const masterPrimaryButtonClass = isMasterHome
+      ? 'bg-gradient-to-r from-amber-400 via-yellow-500 to-orange-500'
+      : 'bg-gradient-to-r from-blue-500 to-blue-600';
     return (
-      <div className="pb-24">
+      <div className={`pb-24 ${isMasterHome ? 'min-h-screen bg-gradient-to-b from-amber-50 via-yellow-50 to-orange-50 relative overflow-hidden' : ''}`}>
+        {isMasterHome && (
+          <>
+            <div className="pointer-events-none absolute -top-24 -right-20 w-72 h-72 rounded-full bg-yellow-200/45 blur-3xl"/>
+            <div className="pointer-events-none absolute top-72 -left-24 w-64 h-64 rounded-full bg-amber-200/35 blur-3xl"/>
+            <div className="pointer-events-none absolute inset-0 opacity-35 bg-[radial-gradient(circle_at_22%_12%,rgba(255,255,255,.9),transparent_24%),radial-gradient(circle_at_76%_34%,rgba(251,191,36,.26),transparent_26%)]"/>
+          </>
+        )}
         {/* Header */}
-        <div className="px-3 pt-3 pb-2 bg-gradient-to-b from-sky-100 to-sky-50">
+        <div className={`relative z-10 px-3 pt-3 pb-2 ${isMasterHome ? 'bg-gradient-to-b from-amber-50/95 via-yellow-50/90 to-orange-50/70' : 'bg-gradient-to-b from-sky-100 to-sky-50'}`}>
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center border-2 border-red-400 overflow-hidden">
+            <div className={`w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center border-2 overflow-hidden ${
+              isMasterHome ? 'border-amber-300 shadow-[0_0_24px_rgba(245,158,11,.32)]' : 'border-red-400'
+            }`}>
               <BuaMascot size={46} stage={mascotStage} evolutionStage={evoStage} investmentPath={player.selectedInvestmentPath} imageOverride={mascotImageOverride} imageScale={mascotImageScale} imageOffsetX={profileMascotImageOffset.x} imageOffsetY={profileMascotImageOffset.y}/>
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <div className="font-bold text-gray-800">Lv.{player.level}</div>
-                <div className="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-bold">{evoInfo.name}</div>
+                <div className={`font-bold ${isMasterHome ? 'text-amber-950' : 'text-gray-800'}`}>Lv.{player.level}</div>
+                <div className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                  isMasterHome ? 'bg-gradient-to-r from-yellow-100 to-amber-100 text-amber-800 border border-amber-200' : 'bg-blue-100 text-blue-600'
+                }`}>{isMasterHome ? '👑 Investment Master' : evoInfo.name}</div>
               </div>
               {/* EXP bar */}
               <div className="h-2 bg-white rounded-full overflow-hidden shadow-inner mt-1">
-                <div className="h-full bg-gradient-to-r from-blue-400 to-blue-500 rounded-full transition-all duration-700"
+                <div className={`h-full rounded-full transition-all duration-700 ${
+                  isMasterHome ? 'bg-gradient-to-r from-amber-300 via-yellow-400 to-orange-400' : 'bg-gradient-to-r from-blue-400 to-blue-500'
+                }`}
                   style={{ width: `${Math.min(100, (player.currentExp / expNeeded) * 100)}%` }}/>
               </div>
-              <div className="text-[10px] text-gray-500 mt-0.5">EXP {player.currentExp} / {expNeeded}</div>
+              <div className={`text-[10px] mt-0.5 ${isMasterHome ? 'text-amber-800/75' : 'text-gray-500'}`}>EXP {player.currentExp} / {expNeeded}</div>
             </div>
-            <div className="flex items-center gap-1 bg-white rounded-full px-2.5 py-1.5 shadow-md">
+            <div className={`flex items-center gap-1 rounded-full px-2.5 py-1.5 shadow-md ${
+              isMasterHome ? 'bg-white/90 border border-amber-100' : 'bg-white'
+            }`}>
               <BuaCoinIcon size={18}/>
-              <span className="font-bold text-gray-800 text-xs">{player.coins.toLocaleString()}</span>
+              <span className={`font-bold text-xs ${isMasterHome ? 'text-amber-950' : 'text-gray-800'}`}>{player.coins.toLocaleString()}</span>
             </div>
             <button onClick={() => setShowDemoGuide(true)}
-              className="h-8 bg-white rounded-full shadow-md flex items-center gap-1 px-2.5 justify-center active:scale-95 transition">
-              <BookOpen size={14} className="text-indigo-500"/>
-              <span className="text-[10px] font-black text-indigo-600">Demo</span>
+              className={`h-8 rounded-full shadow-md flex items-center gap-1 px-2.5 justify-center active:scale-95 transition ${
+                isMasterHome ? 'bg-white/90 border border-amber-100' : 'bg-white'
+              }`}>
+              <BookOpen size={14} className={isMasterHome ? 'text-amber-600' : 'text-indigo-500'}/>
+              <span className={`text-[10px] font-black ${isMasterHome ? 'text-amber-700' : 'text-indigo-600'}`}>Demo</span>
             </button>
           </div>
 
           {/* Learning phase banner */}
-          <div className={`bg-${phaseInfo.color}-50 border border-${phaseInfo.color}-200 rounded-xl px-3 py-1.5 mb-2 flex items-center justify-between`}>
+          <div className={`rounded-xl px-3 py-1.5 mb-2 flex items-center justify-between ${
+            isMasterHome
+              ? 'bg-white/70 border border-amber-200 shadow-[0_8px_22px_rgba(217,119,6,.08)]'
+              : `bg-${phaseInfo.color}-50 border border-${phaseInfo.color}-200`
+          }`}>
             <div>
-              <div className="text-[10px] text-gray-500">เฟสการเรียนรู้</div>
-              <div className="font-bold text-gray-800 text-xs">{phaseInfo.name}</div>
+              <div className={`text-[10px] ${isMasterHome ? 'text-amber-700/75' : 'text-gray-500'}`}>เฟสการเรียนรู้</div>
+              <div className={`font-bold text-xs ${isMasterHome ? 'text-amber-950' : 'text-gray-800'}`}>
+                {isMasterHome ? '👑 Master Journey' : phaseInfo.name}
+              </div>
             </div>
-            {nextUnlock && (
+            {isMasterHome ? (
+              <div className="text-right">
+                <div className="text-[10px] text-amber-700/75">สถานะสูงสุด</div>
+                <div className="text-xs font-bold text-amber-700">All Paths Completed</div>
+              </div>
+            ) : nextUnlock && (
               <div className="text-right">
                 <div className="text-[10px] text-gray-500">ปลดล็อกถัดไป Lv.{nextUnlock.requiredLevel}</div>
                 <div className="text-xs font-bold text-blue-600">{nextUnlock.icon} {nextUnlock.name}</div>
@@ -2668,7 +2896,9 @@ export default function App() {
           </div>
 
           {/* Mascot scene */}
-          <div className="relative rounded-3xl overflow-hidden shadow-inner"
+          <div className={`relative rounded-3xl overflow-hidden shadow-inner ${
+            isMasterHome ? 'border border-amber-200 shadow-[0_18px_46px_rgba(217,119,6,.18)]' : ''
+          }`}
             style={{ backgroundImage: `url(${sceneBgImg})`, backgroundSize: 'cover', backgroundPosition: 'center', minHeight: '218px' }}>
             <style>{`
               @keyframes mascot-bubble-bounce-stable {
@@ -2677,7 +2907,34 @@ export default function App() {
                 22% { opacity: 1; transform: translateY(0) scale(1); }
                 100% { opacity: 1; transform: translateY(0) scale(1); }
               }
+              @keyframes master-home-glow {
+                0%, 100% { transform: translate(-50%, -50%) scale(.92); opacity: .42; }
+                50% { transform: translate(-50%, -50%) scale(1.08); opacity: .72; }
+              }
+              @keyframes master-home-sparkle {
+                0%, 100% { opacity: .25; transform: translateY(0) scale(.9); }
+                50% { opacity: .9; transform: translateY(-8px) scale(1.08); }
+              }
             `}</style>
+            {isMasterHome && (
+              <>
+                <div className="absolute inset-0 bg-gradient-to-b from-amber-50/10 via-transparent to-amber-900/10 z-[1]"/>
+                <div className="absolute left-1/2 top-[48%] w-52 h-52 rounded-full bg-yellow-200/35 blur-2xl z-[2]" style={{ animation: 'master-home-glow 4s ease-in-out infinite' }}/>
+                {['✦', '✨', '✧', '✦', '✨'].map((spark, i) => (
+                  <div
+                    key={i}
+                    className="absolute z-[3] text-yellow-200 drop-shadow-[0_0_8px_rgba(250,204,21,.75)]"
+                    style={{
+                      left: `${16 + i * 17}%`,
+                      top: `${18 + (i % 2) * 48}%`,
+                      animation: `master-home-sparkle ${2.4 + i * 0.25}s ease-in-out ${i * 0.18}s infinite`,
+                    }}
+                  >
+                    {spark}
+                  </div>
+                ))}
+              </>
+            )}
             {mascotBubble && (
               <div
                 key={mascotBubble.id}
@@ -2696,43 +2953,47 @@ export default function App() {
               <BuaMascot size={140} mood={mood} stage={mascotStage} evolutionStage={evoStage} investmentPath={player.selectedInvestmentPath} imageOverride={mascotImageOverride} imageScale={mascotImageScale} imageOffsetX={mascotImageOffset.x} imageOffsetY={mascotImageOffset.y}/>
             </div>
             <div className="absolute right-2 top-3 flex flex-col gap-1.5 z-20">
-              <button onClick={claimCheckin} className="bg-white rounded-2xl w-11 h-11 shadow-lg flex flex-col items-center justify-center relative active:scale-95 transition">
-                <Gift size={16} className="text-red-500"/><div className="text-[8px] font-bold text-gray-700">เช็คอิน</div>
+              <button onClick={claimCheckin} className={`rounded-2xl w-11 h-11 shadow-lg flex flex-col items-center justify-center relative active:scale-95 transition ${isMasterHome ? 'bg-white/90 border border-amber-100' : 'bg-white'}`}>
+                <Gift size={16} className={isMasterHome ? 'text-amber-500' : 'text-red-500'}/><div className={`text-[8px] font-bold ${isMasterHome ? 'text-amber-950' : 'text-gray-700'}`}>เช็คอิน</div>
                 {!player.checkedInToday && <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-white text-[10px] flex items-center justify-center font-bold">1</div>}
               </button>
-              <button onClick={() => setScreen('quests')} className="bg-white rounded-2xl w-11 h-11 shadow-lg flex flex-col items-center justify-center active:scale-95 transition">
-                <Target size={16} className="text-blue-500"/><div className="text-[8px] font-bold text-gray-700">ภารกิจ</div>
+              <button onClick={() => setScreen('quests')} className={`rounded-2xl w-11 h-11 shadow-lg flex flex-col items-center justify-center active:scale-95 transition ${isMasterHome ? 'bg-white/90 border border-amber-100' : 'bg-white'}`}>
+                <Target size={16} className={isMasterHome ? 'text-yellow-600' : 'text-blue-500'}/><div className={`text-[8px] font-bold ${isMasterHome ? 'text-amber-950' : 'text-gray-700'}`}>ภารกิจ</div>
               </button>
-              <button onClick={() => setScreen('friends')} className="bg-white rounded-2xl w-11 h-11 shadow-lg flex flex-col items-center justify-center active:scale-95 transition">
-                <Users size={16} className="text-pink-500"/><div className="text-[8px] font-bold text-gray-700">Friend</div>
+              <button onClick={() => setScreen('friends')} className={`rounded-2xl w-11 h-11 shadow-lg flex flex-col items-center justify-center active:scale-95 transition ${isMasterHome ? 'bg-white/90 border border-amber-100' : 'bg-white'}`}>
+                <Users size={16} className={isMasterHome ? 'text-rose-400' : 'text-pink-500'}/><div className={`text-[8px] font-bold ${isMasterHome ? 'text-amber-950' : 'text-gray-700'}`}>Friend</div>
               </button>
-              <button onClick={() => setModal('shop')} className="bg-white rounded-2xl w-11 h-11 shadow-lg flex flex-col items-center justify-center active:scale-95 transition">
-                <ShoppingBag size={16} className="text-orange-500"/><div className="text-[8px] font-bold text-gray-700">ร้านค้า</div>
+              <button onClick={() => setModal('shop')} className={`rounded-2xl w-11 h-11 shadow-lg flex flex-col items-center justify-center active:scale-95 transition ${isMasterHome ? 'bg-white/90 border border-amber-100' : 'bg-white'}`}>
+                <ShoppingBag size={16} className="text-orange-500"/><div className={`text-[8px] font-bold ${isMasterHome ? 'text-amber-950' : 'text-gray-700'}`}>ร้านค้า</div>
               </button>
             </div>
           </div>
 
           <div className="flex gap-2 mt-2">
-            <StatPill icon={Heart} color="text-pink-500"   label="ความสุข"  value={player.happy}  max={100}/>
-            <StatPill icon={Zap}   color="text-yellow-500" label="พลังงาน"  value={player.energy} max={100}/>
-            <div className="flex items-center gap-1.5 bg-white rounded-xl px-2.5 py-1.5 shadow-sm flex-1">
+            <StatPill icon={Heart} color="text-pink-500"   label="ความสุข"  value={player.happy}  max={100} master={isMasterHome}/>
+            <StatPill icon={Zap}   color="text-yellow-500" label="พลังงาน"  value={player.energy} max={100} master={isMasterHome}/>
+            <div className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 shadow-sm flex-1 ${
+              isMasterHome ? 'bg-white/85 border border-amber-100 shadow-[0_8px_22px_rgba(217,119,6,.10)]' : 'bg-white'
+            }`}>
               <BuaCoinIcon size={24} className="shrink-0"/>
-              <div className="flex-1 min-w-0"><div className="text-[10px] text-gray-500">Bua Coin</div><div className="text-xs font-bold">{player.coins.toLocaleString()}</div></div>
+              <div className="flex-1 min-w-0"><div className={`text-[10px] ${isMasterHome ? 'text-amber-700/75' : 'text-gray-500'}`}>Bua Coin</div><div className={`text-xs font-bold ${isMasterHome ? 'text-amber-950' : ''}`}>{player.coins.toLocaleString()}</div></div>
             </div>
           </div>
         </div>
 
         {/* Next quest card */}
-        <div className="mx-3 mt-3 bg-white rounded-2xl p-3 shadow-md">
+        <div className={`relative z-10 mx-3 mt-3 rounded-2xl p-3 ${masterCardClass}`}>
           <div className="flex items-center justify-between mb-2">
-            <div className="font-bold text-gray-800 text-sm">ภารกิจวันนี้</div>
-            <button onClick={() => setScreen('quests')} className="text-xs text-blue-500 flex items-center gap-1 font-medium">ดูทั้งหมด <ChevronRight size={14}/></button>
+            <div className={`font-bold text-sm ${isMasterHome ? 'text-amber-950' : 'text-gray-800'}`}>
+              {isMasterHome ? 'ภารกิจวันนี้ · Master Focus' : 'ภารกิจวันนี้'}
+            </div>
+            <button onClick={() => setScreen('quests')} className={`text-xs flex items-center gap-1 font-medium ${isMasterHome ? 'text-amber-700' : 'text-blue-500'}`}>ดูทั้งหมด <ChevronRight size={14}/></button>
           </div>
           {nextQuest ? (
             <div className="flex items-center gap-3">
               <div className="text-2xl">{nextQuest.icon}</div>
               <div className="flex-1">
-                <div className="font-bold text-gray-800 text-sm">{nextQuest.title}</div>
+                <div className={`font-bold text-sm ${isMasterHome ? 'text-amber-950' : 'text-gray-800'}`}>{nextQuest.title}</div>
                 <div className="text-[11px] text-gray-500 mb-1 line-clamp-1">{nextQuest.desc}</div>
                 <div className="flex items-center gap-2 text-[11px]">
                   <span className="bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full font-bold">⭐ +{nextQuest.exp}</span>
@@ -2744,16 +3005,19 @@ export default function App() {
                   className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow active:scale-95">รับรางวัล</button>
               ) : (
                 <button onClick={() => { if (nextQuest.type === 'trade') setScreen('invest'); else if (nextQuest.type === 'action') setModal('shop'); else startQuest(nextQuest); }}
-                  className="bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow active:scale-95">{getQuestStatus(nextQuest) === 'in-progress' ? 'ทำต่อ' : 'เริ่ม'}</button>
+                  className={`${masterPrimaryButtonClass} text-white text-xs font-bold px-4 py-2.5 rounded-full shadow active:scale-95`}>{getQuestStatus(nextQuest) === 'in-progress' ? 'ทำต่อ' : 'เริ่ม'}</button>
               )}
             </div>
           ) : <div className="text-center text-gray-400 text-sm py-4">🎉 เควสต์ที่มีทำเสร็จหมดแล้ว!</div>}
         </div>
 
         {/* Lesson card */}
-        <div className="mx-3 mt-2.5">
-          <button onClick={() => setScreen('lessons')} className="w-full bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-3 shadow-md text-left text-white overflow-hidden relative">
+        <div className="relative z-10 mx-3 mt-2.5">
+          <button onClick={() => setScreen('lessons')} className={`w-full rounded-2xl p-3 shadow-md text-left text-white overflow-hidden relative ${
+            isMasterHome ? 'bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-500 shadow-[0_12px_28px_rgba(217,119,6,.18)]' : 'bg-gradient-to-br from-blue-500 to-indigo-600'
+          }`}>
             <div className="absolute -right-5 -bottom-8 text-8xl opacity-15">📘</div>
+            {isMasterHome && <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,.38),transparent_38%)]"/>}
             <div className="relative flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center">
                 <PlayCircle size={23}/>
@@ -2778,18 +3042,20 @@ export default function App() {
         </div>
 
         {/* Portfolio card */}
-        <div className="mx-3 mt-2.5">
+        <div className="relative z-10 mx-3 mt-2.5">
           {portfolioUnlocked ? (
-            <button onClick={() => setScreen('invest')} className="w-full bg-white rounded-2xl p-3 shadow-md text-left">
-              <div className="font-bold text-gray-800 text-sm mb-1.5">พอร์ตลงทุนของฉัน</div>
-              <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-2.5 flex items-center gap-3">
+            <button onClick={() => setScreen('invest')} className={`w-full rounded-2xl p-3 text-left ${masterCardClass}`}>
+              <div className={`font-bold text-sm mb-1.5 ${isMasterHome ? 'text-amber-950' : 'text-gray-800'}`}>
+                {isMasterHome ? '👑 Master Portfolio' : 'พอร์ตลงทุนของฉัน'}
+              </div>
+              <div className={`${isMasterHome ? 'bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 border border-amber-100' : 'bg-gradient-to-br from-purple-50 to-blue-50'} rounded-xl p-2.5 flex items-center gap-3`}>
                 <div className="flex-1"><div className="text-[10px] text-gray-500">มูลค่ารวม</div><div className="font-bold text-lg text-gray-800">{fmt(totalValue, 0)} <span className="text-xs text-gray-500">บาท</span></div></div>
                 <div className="text-right"><div className="text-[10px] text-gray-500">Return รวม</div><div className={`font-bold text-sm ${playerTradingReturnPct >= 0 ? 'text-green-500' : 'text-red-500'}`}>{playerTradingReturnPct >= 0 ? '+' : ''}{fmt(playerTradingReturnPct)}%</div></div>
                 <ChevronRight size={16} className="text-gray-400"/>
               </div>
             </button>
           ) : (
-            <div className="bg-white rounded-2xl p-3 shadow-md">
+            <div className={`rounded-2xl p-3 ${masterCardClass}`}>
               <div className="flex items-center gap-2 mb-2">
                 <Lock size={16} className="text-gray-400"/><div className="font-bold text-gray-500 text-sm">พอร์ตจำลอง</div>
               </div>
@@ -2808,14 +3074,16 @@ export default function App() {
         </div>
 
         {player.level >= 20 && (
-          <div className="mx-4 mt-3 bg-white rounded-2xl p-4 shadow-md">
+          <div className={`relative z-10 mx-4 mt-3 rounded-2xl p-4 ${masterCardClass}`}>
             <div className="flex items-center gap-3">
               <div className="text-3xl">{selectedPathInfo?.icon ?? '🌟'}</div>
               <div className="flex-1">
-                <div className="font-bold text-gray-800 text-sm">เส้นทางลงทุน</div>
+                <div className={`font-bold text-sm ${isMasterHome ? 'text-amber-950' : 'text-gray-800'}`}>
+                  {isMasterHome ? 'เส้นทางลงทุน · Completed' : 'เส้นทางลงทุน'}
+                </div>
                 {selectedPathInfo ? (
                   <>
-                    <div className="text-xs font-bold text-blue-600">{selectedPathInfo.name}</div>
+                    <div className={`text-xs font-bold ${isMasterHome ? 'text-amber-700' : 'text-blue-600'}`}>{selectedPathInfo.name}</div>
                     <div className="text-[11px] text-gray-500">{selectedPathInfo.style}</div>
                   </>
                 ) : (
@@ -2833,9 +3101,9 @@ export default function App() {
         )}
 
         {/* Check-in 7-day */}
-        <div className="mx-4 mt-3 mb-3 bg-white rounded-2xl p-4 shadow-md">
+        <div className={`relative z-10 mx-4 mt-3 mb-3 rounded-2xl p-4 ${masterCardClass}`}>
           <div className="flex items-center justify-between mb-3">
-            <div className="font-bold text-gray-800 text-sm flex items-center gap-1.5"><Flame size={16} className="text-orange-500"/> เช็คอิน 7 วัน</div>
+            <div className={`font-bold text-sm flex items-center gap-1.5 ${isMasterHome ? 'text-amber-950' : 'text-gray-800'}`}><Flame size={16} className="text-orange-500"/> เช็คอิน 7 วัน</div>
             <div className="text-xs text-orange-500 font-bold">{player.streak} วัน 🔥</div>
           </div>
           <div className="grid grid-cols-7 gap-1">
@@ -2935,30 +3203,30 @@ export default function App() {
     };
 
     return (
-      <div className="pb-24 px-4 pt-4 bg-gradient-to-b from-blue-50 via-indigo-50 to-white min-h-screen">
+      <div className={`pb-24 px-4 pt-4 min-h-screen ${isMasterTheme ? 'bg-gradient-to-b from-amber-50 via-yellow-50 to-white' : 'bg-gradient-to-b from-blue-50 via-indigo-50 to-white'}`}>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <div className="text-[10px] text-blue-500 font-bold">Bua Learning Journey</div>
-            <div className="font-black text-xl text-gray-800">บทที่ 1: พื้นฐานการลงทุนในหุ้น 101</div>
-            <div className="text-xs text-gray-500">ดูคลิป → ทำ Quiz → ปลดล็อกคลิปถัดไป</div>
+            <div className={`text-[10px] font-bold ${appTheme.accentText}`}>Bua Learning Journey</div>
+            <div className={`font-black text-xl ${appTheme.titleText}`}>บทที่ 1: พื้นฐานการลงทุนในหุ้น 101</div>
+            <div className={`text-xs ${appTheme.mutedText}`}>ดูคลิป → ทำ Quiz → ปลดล็อกคลิปถัดไป</div>
           </div>
-          <button onClick={() => setScreen('home')} className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center active:scale-95">
+          <button onClick={() => setScreen('home')} className={`w-10 h-10 rounded-full shadow-sm flex items-center justify-center active:scale-95 ${isMasterTheme ? 'bg-white/90 border border-amber-100' : 'bg-white'}`}>
             <X size={16} className="text-gray-500"/>
           </button>
         </div>
 
-        <div className="bg-white rounded-3xl p-4 shadow-md mb-4 border border-blue-100">
+        <div className={`rounded-3xl p-4 mb-4 ${appTheme.surfaceStrong}`}>
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-100 to-pink-100 flex items-center justify-center">
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${isMasterTheme ? 'bg-gradient-to-br from-amber-100 to-yellow-100 border border-amber-200' : 'bg-gradient-to-br from-blue-100 to-pink-100'}`}>
               <BuaMascot size={52} mood="happy" stage={1} evolutionStage="bua-seed"/>
             </div>
             <div className="flex-1">
-              <div className="font-bold text-gray-800 text-sm">เป้าหมายบทนี้</div>
+              <div className={`font-bold text-sm ${appTheme.titleText}`}>เป้าหมายบทนี้</div>
               <div className="text-xs text-gray-500 leading-relaxed">ให้น้องบัวเข้าใจหุ้นตั้งแต่ความหมาย การซื้อขาย Mindset การอ่านงบ ไปจนถึงการคิดก่อนซื้อ/ถือ/ขาย</div>
             </div>
           </div>
           <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-700"
+            <div className={`h-full rounded-full transition-all duration-700 ${isMasterTheme ? 'bg-gradient-to-r from-amber-400 via-yellow-500 to-orange-500' : 'bg-gradient-to-r from-blue-500 to-indigo-500'}`}
               style={{ width: `${(completedCount / STOCK101_LESSONS.length) * 100}%` }}/>
           </div>
           <div className="text-[10px] text-gray-500 mt-1 text-right">เรียนจบ {completedCount}/{STOCK101_LESSONS.length} คลิป</div>
@@ -2978,14 +3246,14 @@ export default function App() {
             return (
               <button key={lesson.id} onClick={() => openLesson(lesson, unlocked)}
                 className={`w-full rounded-2xl p-3 text-left border transition active:scale-[0.99] ${
-                  active ? 'bg-blue-600 border-blue-600 text-white shadow-md' :
+                  active ? `${isMasterTheme ? 'bg-amber-500 border-amber-500' : 'bg-blue-600 border-blue-600'} text-white shadow-md` :
                   completed ? 'bg-green-50 border-green-200 text-gray-800' :
-                  unlocked ? 'bg-white border-blue-100 text-gray-800 shadow-sm' :
+                  unlocked ? `${isMasterTheme ? 'bg-white/85 border-amber-100' : 'bg-white border-blue-100'} text-gray-800 shadow-sm` :
                   'bg-gray-50 border-gray-100 text-gray-400'
                 }`}>
                 <div className="flex items-center gap-3">
                   <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
-                    active ? 'bg-white/20' : completed ? 'bg-green-500 text-white' : unlocked ? 'bg-blue-50 text-blue-500' : 'bg-gray-200'
+                    active ? 'bg-white/20' : completed ? 'bg-green-500 text-white' : unlocked ? `${isMasterTheme ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-500'}` : 'bg-gray-200'
                   }`}>
                     {completed ? <CheckCircle size={18}/> : unlocked ? <PlayCircle size={18}/> : <Lock size={16}/>}
                   </div>
@@ -3005,7 +3273,7 @@ export default function App() {
           })}
         </div>
 
-        <div ref={lessonDetailRef} className="bg-white rounded-3xl shadow-md overflow-hidden border border-blue-100 scroll-mt-4">
+        <div ref={lessonDetailRef} className={`rounded-3xl shadow-md overflow-hidden scroll-mt-4 ${appTheme.surfaceStrong}`}>
           {!activeUnlocked ? (
             <div className="p-5 text-center">
               <Lock size={28} className="mx-auto text-gray-300 mb-2"/>
@@ -3231,9 +3499,9 @@ export default function App() {
         return <button onClick={() => setScreen('friends')} className="bg-pink-500 text-white text-xs font-bold px-3 py-2 rounded-full active:scale-95">ไปเยี่ยม</button>;
       }
       if (q.type === 'lesson' && !q.lesson) {
-        return <button onClick={() => setScreen('lessons')} className="bg-blue-500 text-white text-xs font-bold px-3 py-2 rounded-full active:scale-95">ไปเรียน</button>;
+        return <button onClick={() => setScreen('lessons')} className={`${isMasterTheme ? 'bg-amber-500' : 'bg-blue-500'} text-white text-xs font-bold px-3 py-2 rounded-full active:scale-95`}>ไปเรียน</button>;
       }
-      return <button onClick={() => startQuest(q)} className="bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-bold px-3 py-2 rounded-full active:scale-95">{status === 'in-progress' ? 'ทำต่อ' : 'เริ่ม'}</button>;
+      return <button onClick={() => startQuest(q)} className={`${appTheme.primary} text-white text-xs font-bold px-3 py-2 rounded-full active:scale-95`}>{status === 'in-progress' ? 'ทำต่อ' : 'เริ่ม'}</button>;
     };
 
     const QuestCard = ({ q }: { q: Quest }) => {
@@ -3245,7 +3513,9 @@ export default function App() {
           ? `ต้องทำ "${QUESTS.find(x => x.id === missingQuest)?.title ?? missingQuest}" ก่อน`
           : 'ต้องเรียนบทก่อนหน้าก่อน';
       return (
-        <div className={`bg-white rounded-2xl p-4 shadow-sm border ${status === 'done' ? 'border-green-200 opacity-75' : status === 'locked' ? 'border-gray-100 opacity-50' : status === 'reward' ? 'border-yellow-200' : 'border-gray-100'}`}>
+        <div className={`rounded-2xl p-4 shadow-sm border ${
+          isMasterTheme ? 'bg-white/85' : 'bg-white'
+        } ${status === 'done' ? 'border-green-200 opacity-75' : status === 'locked' ? 'border-gray-100 opacity-50' : status === 'reward' ? 'border-yellow-200' : isMasterTheme ? 'border-amber-100' : 'border-gray-100'}`}>
           <div className="flex items-center gap-3">
             <div className="text-3xl">{q.icon}</div>
             <div className="flex-1">
@@ -3272,10 +3542,10 @@ export default function App() {
 
     const activeQuests = questGroups[tab];
     return (
-      <div className="pb-24 min-h-screen bg-gradient-to-b from-sky-50 to-white">
+      <div className={`pb-24 min-h-screen ${appTheme.pageBg}`}>
         <div className="px-4 pt-4 pb-2">
-          <div className="font-bold text-xl text-gray-800 mb-1">ภารกิจ</div>
-          <div className="text-xs text-gray-500">เรียนรู้และรับรางวัล!</div>
+          <div className={`font-bold text-xl mb-1 ${appTheme.titleText}`}>ภารกิจ</div>
+          <div className={`text-xs ${appTheme.mutedText}`}>เรียนรู้และรับรางวัล!</div>
         </div>
         <div className="grid grid-cols-4 gap-1.5 px-4 mb-3">
           {([
@@ -3285,7 +3555,7 @@ export default function App() {
             ['done', 'สำเร็จ'],
           ] as [QuestStatus, string][]).map(([id, label]) => (
             <button key={id} onClick={() => setTab(id)}
-              className={`py-2 rounded-full text-[10px] font-bold ${tab === id ? 'bg-blue-500 text-white' : 'bg-white text-gray-500 border'}`}>
+              className={`py-2 rounded-full text-[10px] font-bold ${tab === id ? appTheme.activeTab : isMasterTheme ? 'bg-white/80 text-amber-700 border border-amber-100' : 'bg-white text-gray-500 border'}`}>
               {label} ({questGroups[id].length})
             </button>
           ))}
@@ -3305,14 +3575,14 @@ export default function App() {
   const InvestScreen = () => {
     if (!portfolioUnlocked) {
       return (
-        <div className="pb-24 min-h-screen bg-gradient-to-b from-purple-50 to-white px-4 pt-8">
+        <div className={`pb-24 min-h-screen px-4 pt-8 ${isMasterTheme ? 'bg-gradient-to-b from-amber-50 via-yellow-50 to-white' : 'bg-gradient-to-b from-purple-50 to-white'}`}>
           <div className="text-center mb-6">
             <div className="text-6xl mb-3">🔒</div>
-            <div className="font-bold text-xl text-gray-800 mb-2">พอร์ตจำลอง</div>
-            <div className="text-sm text-gray-500">Portfolio Simulation จะปลดล็อกเมื่อคุณถึง Level 10 และผ่านบทเรียนที่กำหนด</div>
+            <div className={`font-bold text-xl mb-2 ${appTheme.titleText}`}>พอร์ตจำลอง</div>
+            <div className={`text-sm ${appTheme.mutedText}`}>Portfolio Simulation จะปลดล็อกเมื่อคุณถึง Level 10 และผ่านบทเรียนที่กำหนด</div>
           </div>
-          <div className="bg-white rounded-2xl p-4 shadow-md mb-4">
-            <div className="font-bold text-gray-800 text-sm mb-3">เงื่อนไขปลดล็อก</div>
+          <div className={`rounded-2xl p-4 mb-4 ${appTheme.surfaceStrong}`}>
+            <div className={`font-bold text-sm mb-3 ${appTheme.titleText}`}>เงื่อนไขปลดล็อก</div>
             {portfolioChecklist.map((c, i) => (
               <div key={i} className="flex items-center gap-2 text-sm mb-2">
                 {c.done ? <CheckCircle size={16} className="text-green-500 flex-shrink-0"/> : <div className="w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0"/>}
@@ -3321,7 +3591,7 @@ export default function App() {
               </div>
             ))}
           </div>
-          <button onClick={() => setScreen('lessons')} className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold py-3 rounded-full shadow">ไปเรียนบทเรียน 📚</button>
+          <button onClick={() => setScreen('lessons')} className={`w-full ${appTheme.primary} text-white font-bold py-3 rounded-full shadow`}>ไปเรียนบทเรียน 📚</button>
         </div>
       );
     }
@@ -3339,8 +3609,8 @@ export default function App() {
       minute: '2-digit',
     });
     return (
-      <div className="pb-24 min-h-screen bg-gray-50">
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 px-4 pt-5 pb-4 text-white">
+      <div className={`pb-24 min-h-screen ${isMasterTheme ? 'bg-gradient-to-b from-amber-50 via-yellow-50 to-orange-50' : 'bg-gray-50'}`}>
+        <div className={`${isMasterTheme ? 'bg-gradient-to-br from-amber-500 via-yellow-500 to-orange-500' : 'bg-gradient-to-br from-purple-500 to-purple-600'} px-4 pt-5 pb-4 text-white`}>
           <div className="flex items-center justify-between mb-3">
             <div className="text-xl font-bold">ลงทุน</div>
             <div className="bg-white/20 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1">
@@ -3380,9 +3650,9 @@ export default function App() {
             </div>
           </div>
         </div>
-        <div className="flex bg-white border-b">
+        <div className={`flex ${isMasterTheme ? 'bg-white/90 border-b border-amber-100' : 'bg-white border-b'}`}>
           {(['market','portfolio','history'] as const).map(t => (
-            <button key={t} onClick={() => setInvestTab(t)} className={`flex-1 py-3 text-sm font-bold transition ${investTab === t ? 'text-purple-600 border-b-2 border-purple-600' : 'text-gray-400'}`}>
+            <button key={t} onClick={() => setInvestTab(t)} className={`flex-1 py-3 text-sm font-bold transition ${investTab === t ? `${isMasterTheme ? 'text-amber-600 border-amber-500' : 'text-purple-600 border-purple-600'} border-b-2` : 'text-gray-400'}`}>
               {t === 'market' ? 'ตลาด' : t === 'portfolio' ? 'พอร์ตของฉัน' : 'ประวัติ'}
             </button>
           ))}
@@ -3394,7 +3664,7 @@ export default function App() {
                 <button
                   key={f.id}
                   onClick={() => setCat(f.id)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap ${cat === f.id ? 'bg-purple-600 text-white' : 'bg-white text-gray-600 border'}`}
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap ${cat === f.id ? `${isMasterTheme ? 'bg-amber-500' : 'bg-purple-600'} text-white` : isMasterTheme ? 'bg-white/85 text-amber-700 border border-amber-100' : 'bg-white text-gray-600 border'}`}
                 >
                   {f.label}
                 </button>
@@ -3405,7 +3675,7 @@ export default function App() {
                 const up = s.changePct >= 0;
                 const pathMatch = player.selectedInvestmentPath && s.pathTags.includes(player.selectedInvestmentPath);
                 return (
-                  <button key={s.sym} onClick={() => { setSelected(s); setTradeQty(1); }} className="w-full bg-white rounded-2xl p-3 flex items-center gap-3 shadow-sm active:scale-98 transition">
+                  <button key={s.sym} onClick={() => { setSelected(s); setTradeQty(1); }} className={`w-full rounded-2xl p-3 flex items-center gap-3 shadow-sm active:scale-98 transition ${isMasterTheme ? 'bg-white/90 border border-amber-100' : 'bg-white'}`}>
                     <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-lg flex-shrink-0">{s.logo}</div>
                     <div className="text-left w-24 flex-shrink-0">
                       <div className="font-bold text-gray-800 text-sm">{s.sym}</div>
@@ -3440,7 +3710,7 @@ export default function App() {
                   const avgCostThb = getHoldingAvgCostThb(h, st);
                   const val = getAssetThbPrice(st) * h.shares, cost2 = avgCostThb * h.shares, pnl = val - cost2, pct = (pnl/cost2)*100, up = pnl >= 0;
                   return (
-                    <button key={sym} onClick={() => { setSelected(st); setTradeQty(1); }} className="w-full bg-white rounded-2xl p-3 shadow-sm text-left active:scale-98">
+                    <button key={sym} onClick={() => { setSelected(st); setTradeQty(1); }} className={`w-full rounded-2xl p-3 shadow-sm text-left active:scale-98 ${isMasterTheme ? 'bg-white/90 border border-amber-100' : 'bg-white'}`}>
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">{st.logo}</div>
                         <div className="flex-1"><div className="font-bold text-gray-800 text-sm">{sym}</div><div className="text-[10px] text-gray-400">{h.shares} หน่วย @ ฿{fmt(avgCostThb)}</div></div>
@@ -3456,7 +3726,7 @@ export default function App() {
             {tradeHistory.length === 0
               ? <div className="text-center text-gray-400 py-16"><Clock size={48} className="mx-auto mb-3 opacity-30"/><div className="text-sm">ยังไม่มีประวัติ</div></div>
               : tradeHistory.map((t, i) => (
-                  <div key={i} className="bg-white rounded-xl p-3 flex items-center gap-3 shadow-sm">
+                  <div key={i} className={`rounded-xl p-3 flex items-center gap-3 shadow-sm ${isMasterTheme ? 'bg-white/90 border border-amber-100' : 'bg-white'}`}>
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${t.type==='buy' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-500'}`}>{t.type==='buy'?'ซื้อ':'ขาย'}</div>
                     <div className="flex-1"><div className="font-bold text-sm">{t.sym}</div><div className="text-[10px] text-gray-400">{t.qty} หน่วย @ ฿{fmt(t.price)}</div></div>
                     <div className="font-bold text-sm">{fmt(t.price*t.qty)}</div>
@@ -3477,9 +3747,9 @@ export default function App() {
   const ProfileScreen = () => {
     const earned = BADGES.filter(b => player.earnedBadgeIds.includes(b.id));
     const CoreNode = ({ label, sub, reached }: { label: string; sub: string; reached: boolean }) => (
-      <div className={`relative rounded-2xl p-3 border ${reached ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-100 opacity-60'}`}>
+      <div className={`relative rounded-2xl p-3 border ${reached ? (isMasterTheme ? 'bg-amber-50 border-amber-200' : 'bg-blue-50 border-blue-200') : 'bg-gray-50 border-gray-100 opacity-60'}`}>
         <div className="flex items-center gap-2">
-          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold ${reached ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
+          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold ${reached ? (isMasterTheme ? 'bg-amber-500 text-white' : 'bg-blue-500 text-white') : 'bg-gray-200 text-gray-400'}`}>
             {reached ? '✓' : '•'}
           </div>
           <div className="flex-1">
@@ -3502,7 +3772,7 @@ export default function App() {
         : id === 'bua-trader' && pathMasterReached ? TRADING_MASTER_IMG
         : path.imageUrl;
       return (
-        <div className={`rounded-2xl p-3 border transition ${pathMasterReached ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-300 shadow-sm' : selected ? 'bg-gradient-to-r from-orange-50 to-pink-50 border-orange-300 shadow-sm' : pathUnlocked ? 'bg-white border-gray-100' : 'bg-gray-50 border-gray-100 opacity-60'}`}>
+        <div className={`rounded-2xl p-3 border transition ${pathMasterReached ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-300 shadow-sm' : selected ? 'bg-gradient-to-r from-orange-50 to-pink-50 border-orange-300 shadow-sm' : pathUnlocked ? (isMasterTheme ? 'bg-white/85 border-amber-100' : 'bg-white border-gray-100') : 'bg-gray-50 border-gray-100 opacity-60'}`}>
           <div className="flex items-start gap-2">
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${selected ? 'bg-white shadow-sm' : 'bg-gray-50'}`}>
               {displayImageUrl ? <img src={displayImageUrl} alt={pathMasterReached ? master.masterName : path.name} className="w-full h-full object-contain"/> : <span className="text-xl">{path.icon}</span>}
@@ -3531,9 +3801,9 @@ export default function App() {
       );
     };
     return (
-      <div className="pb-24 px-4 pt-4 bg-gradient-to-b from-sky-50 to-white min-h-screen">
-        <div className="font-bold text-xl text-gray-800 mb-4">โปรไฟล์</div>
-        <div className="bg-gradient-to-br from-red-400 to-red-500 rounded-2xl p-4 text-white shadow-lg mb-4">
+      <div className={`pb-24 px-4 pt-4 min-h-screen ${appTheme.pageBg}`}>
+        <div className={`font-bold text-xl mb-4 ${appTheme.titleText}`}>โปรไฟล์</div>
+        <div className={`${isMasterTheme ? 'bg-gradient-to-br from-amber-500 via-yellow-500 to-orange-500' : 'bg-gradient-to-br from-red-400 to-red-500'} rounded-2xl p-4 text-white shadow-lg mb-4`}>
           <div className="flex items-center gap-3">
             <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center border-2 border-white/40"><BuaMascot size={70} stage={mascotStage} evolutionStage={evoStage} investmentPath={player.selectedInvestmentPath} imageOverride={mascotImageOverride} imageScale={mascotImageScale} imageOffsetX={profileMascotImageOffset.x} imageOffsetY={profileMascotImageOffset.y}/></div>
             <div className="flex-1">
@@ -3549,7 +3819,7 @@ export default function App() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-4 shadow-sm mb-3 border border-blue-100">
+        <div className={`rounded-2xl p-4 mb-3 ${appTheme.surfaceStrong}`}>
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="font-bold text-gray-800 text-sm">Account & Cloud Save</div>
@@ -3582,16 +3852,16 @@ export default function App() {
             {session && !localMode ? (
               <button onClick={signOut} className="bg-gray-100 text-gray-600 text-xs font-bold px-3 py-2 rounded-full active:scale-95">Logout</button>
             ) : isSupabaseConfigured && localMode ? (
-              <button onClick={() => setLocalMode(false)} className="bg-blue-500 text-white text-xs font-bold px-3 py-2 rounded-full active:scale-95">Login</button>
+              <button onClick={() => setLocalMode(false)} className={`${isMasterTheme ? 'bg-amber-500' : 'bg-blue-500'} text-white text-xs font-bold px-3 py-2 rounded-full active:scale-95`}>Login</button>
             ) : null}
           </div>
         </div>
 
         {player.level >= 20 && (
-          <div className="bg-white rounded-2xl p-4 shadow-sm mb-3">
-            <div className="font-bold text-gray-800 text-sm mb-3 flex items-center gap-1.5"><Target size={14} className="text-blue-500"/> เส้นทางลงทุน</div>
+          <div className={`rounded-2xl p-4 mb-3 ${appTheme.surface}`}>
+            <div className={`font-bold text-sm mb-3 flex items-center gap-1.5 ${appTheme.titleText}`}><Target size={14} className={isMasterTheme ? 'text-amber-500' : 'text-blue-500'}/> เส้นทางลงทุน</div>
             {selectedPathInfo ? (
-              <div className="flex items-start gap-3 bg-blue-50 rounded-xl p-3">
+              <div className={`flex items-start gap-3 rounded-xl p-3 ${isMasterTheme ? 'bg-amber-50 border border-amber-100' : 'bg-blue-50'}`}>
                 <div className="w-14 h-14 rounded-xl bg-white flex items-center justify-center overflow-hidden shadow-sm border border-blue-100 shrink-0">
                   {selectedPathInfo.imageUrl ? <img src={selectedPathInfo.imageUrl} alt={selectedPathInfo.name} className="w-full h-full object-contain"/> : <span className="text-3xl">{selectedPathInfo.icon}</span>}
                 </div>
@@ -3609,35 +3879,35 @@ export default function App() {
           </div>
         )}
         {/* Master evolution tree */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm mb-3">
-          <div className="font-bold text-gray-800 text-sm mb-1 flex items-center gap-1.5"><Trophy size={14} className="text-orange-500"/> Evolution Tree</div>
+        <div className={`rounded-2xl p-4 mb-3 ${appTheme.surface}`}>
+          <div className={`font-bold text-sm mb-1 flex items-center gap-1.5 ${appTheme.titleText}`}><Trophy size={14} className="text-orange-500"/> Evolution Tree</div>
           <div className="text-xs text-gray-500 mb-4">เส้นทางการเติบโตจากน้องบัวเริ่มต้น ไปจนถึง Investment Master</div>
 
           <div className="space-y-2">
             <CoreNode label="Bua Seed" sub="Lv.1+ เริ่มรู้จักหุ้นและพื้นฐานการลงทุน" reached={player.level >= 1}/>
-            <div className="ml-5 h-4 border-l-2 border-blue-100"/>
+            <div className={`ml-5 h-4 border-l-2 ${isMasterTheme ? 'border-amber-100' : 'border-blue-100'}`}/>
             <CoreNode label="Bua Saver" sub="Lv.5+ เข้าใจการออม เงินสำรอง และวินัยก่อนลงทุน" reached={player.level >= 5}/>
-            <div className="ml-5 h-4 border-l-2 border-blue-100"/>
+            <div className={`ml-5 h-4 border-l-2 ${isMasterTheme ? 'border-amber-100' : 'border-blue-100'}`}/>
             <CoreNode label="Bua Investor" sub="Lv.10+ เริ่มสร้างพอร์ตจำลองและเข้าใจ Risk & Return" reached={player.level >= 10}/>
-            <div className="ml-5 h-4 border-l-2 border-blue-100"/>
+            <div className={`ml-5 h-4 border-l-2 ${isMasterTheme ? 'border-amber-100' : 'border-blue-100'}`}/>
             <CoreNode label="Investment Paths" sub="Lv.20+ เลือกสายเฉพาะทางของน้องบัว" reached={player.level >= 20}/>
           </div>
 
-          <div className="mt-4 pl-3 border-l-2 border-orange-100 space-y-2">
+          <div className={`mt-4 pl-3 border-l-2 space-y-2 ${isMasterTheme ? 'border-amber-200' : 'border-orange-100'}`}>
             {(Object.entries(INVESTMENT_PATHS) as [InvestmentPath, InvestmentPathInfo][]).map(([id, path]) => (
               <PathMasterCard key={id} id={id} path={path}/>
             ))}
           </div>
 
           <div className="mt-4 grid grid-cols-1 gap-2">
-            <div className={`rounded-2xl p-3 border ${allPathMastersCompleted ? 'bg-purple-50 border-purple-200' : 'bg-gray-50 border-gray-100 opacity-70'}`}>
+            <div className={`rounded-2xl p-3 border ${allPathMastersCompleted ? (isMasterTheme ? 'bg-amber-50 border-amber-200' : 'bg-purple-50 border-purple-200') : 'bg-gray-50 border-gray-100 opacity-70'}`}>
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center">🏅</div>
                 <div className="flex-1">
-                  <div className="font-black text-gray-800 text-sm">All Masters Completed</div>
+                  <div className={`font-black text-sm ${appTheme.titleText}`}>All Masters Completed</div>
                   <div className="text-[10px] text-gray-500">ต้องมี Badge Master ครบทุกสายก่อนปลดล็อก Investment Master</div>
                 </div>
-                {allPathMastersCompleted && <CheckCircle size={16} className="text-purple-600"/>}
+                {allPathMastersCompleted && <CheckCircle size={16} className={isMasterTheme ? 'text-amber-600' : 'text-purple-600'}/>}
               </div>
             </div>
             <div className={`rounded-2xl p-3 border ${evoStage === 'investment-master' ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-300 shadow-sm' : 'bg-gray-50 border-gray-100 opacity-70'}`}>
@@ -3653,13 +3923,13 @@ export default function App() {
           </div>
         </div>
         {/* Evolution stages */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm mb-3">
-          <div className="font-bold text-gray-800 text-sm mb-3 flex items-center gap-1.5"><Star size={14} className="text-yellow-500"/> วิวัฒนาการ</div>
+        <div className={`rounded-2xl p-4 shadow-sm mb-3 ${appTheme.surface}`}>
+          <div className={`font-bold text-sm mb-3 flex items-center gap-1.5 ${appTheme.titleText}`}><Star size={14} className="text-yellow-500"/> วิวัฒนาการ</div>
           <div className="space-y-2">
             {(Object.entries(EVOLUTION_INFO) as [EvolutionStage, typeof EVOLUTION_INFO[EvolutionStage]][]).map(([key, info]) => {
               const reached = key === 'investment-master' ? evoStage === 'investment-master' : player.level >= info.minLevel;
               return (
-                <div key={key} className={`flex items-center gap-2 p-2 rounded-xl ${reached ? 'bg-blue-50' : 'bg-gray-50 opacity-50'}`}>
+                <div key={key} className={`flex items-center gap-2 p-2 rounded-xl ${reached ? (isMasterTheme ? 'bg-amber-50' : 'bg-blue-50') : 'bg-gray-50 opacity-50'}`}>
                   <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow text-base">{reached ? '🐣' : '🔒'}</div>
                   <div className="flex-1"><div className="text-[10px] text-gray-500">{key === 'investment-master' ? 'ต้องมี Master Badge ครบทุกสาย' : `Lv.${info.minLevel}+`}</div><div className="font-bold text-xs text-gray-800">{info.name}</div></div>
                   {reached && <CheckCircle size={14} className="text-green-500"/>}
@@ -3669,8 +3939,8 @@ export default function App() {
           </div>
         </div>
         {/* Badges */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <div className="font-bold text-gray-800 text-sm mb-3 flex items-center gap-1.5"><Trophy size={14} className="text-yellow-500"/> ความสำเร็จ ({earned.length}/{BADGES.length})</div>
+        <div className={`rounded-2xl p-4 shadow-sm ${appTheme.surface}`}>
+          <div className={`font-bold text-sm mb-3 flex items-center gap-1.5 ${appTheme.titleText}`}><Trophy size={14} className="text-yellow-500"/> ความสำเร็จ ({earned.length}/{BADGES.length})</div>
           <div className="grid grid-cols-4 gap-2">
             {BADGES.map(b => {
               const e = player.earnedBadgeIds.includes(b.id);
@@ -3717,23 +3987,23 @@ export default function App() {
       const friendPortfolioUnlocked = Boolean(friendRank?.portfolioUnlocked);
 
       return (
-        <div className="pb-24 px-4 pt-4 bg-gradient-to-b from-pink-50 via-sky-50 to-white min-h-screen">
-          <button onClick={() => setSelectedFriend(null)} className="text-xs font-bold text-blue-500 flex items-center gap-1 mb-3">
+        <div className={`pb-24 px-4 pt-4 min-h-screen ${isMasterTheme ? 'bg-gradient-to-b from-amber-50 via-yellow-50 to-white' : 'bg-gradient-to-b from-pink-50 via-sky-50 to-white'}`}>
+          <button onClick={() => setSelectedFriend(null)} className={`text-xs font-bold flex items-center gap-1 mb-3 ${isMasterTheme ? 'text-amber-600' : 'text-blue-500'}`}>
             ← กลับไปหน้ารายชื่อเพื่อน
           </button>
 
-          <div className="bg-white rounded-3xl shadow-md overflow-hidden">
+          <div className={`rounded-3xl shadow-md overflow-hidden ${isMasterTheme ? 'bg-white/90 border border-amber-100' : 'bg-white'}`}>
             <div className="relative min-h-[310px] overflow-hidden"
               style={{ backgroundImage: `url(${friendBgImg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
               <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-black/10"/>
               <div className="absolute top-4 left-4 right-4 flex items-start justify-between z-10">
                 <div className="bg-white/95 rounded-2xl px-3 py-2 shadow">
-                  <div className="text-[10px] text-gray-500 font-bold">บ้านของเพื่อน</div>
-                  <div className="font-black text-gray-800 text-xl">{selectedFriend.name}</div>
+                  <div className={`text-[10px] font-bold ${isMasterTheme ? 'text-amber-700/75' : 'text-gray-500'}`}>บ้านของเพื่อน</div>
+                  <div className={`font-black text-xl ${appTheme.titleText}`}>{selectedFriend.name}</div>
                 </div>
                 <div className="bg-white/95 rounded-2xl px-3 py-2 shadow text-right">
-                  <div className="text-[10px] text-gray-500 font-bold">Level</div>
-                  <div className="font-black text-blue-500 text-xl">Lv.{selectedFriend.level}</div>
+                  <div className={`text-[10px] font-bold ${isMasterTheme ? 'text-amber-700/75' : 'text-gray-500'}`}>Level</div>
+                  <div className={`font-black text-xl ${isMasterTheme ? 'text-amber-600' : 'text-blue-500'}`}>Lv.{selectedFriend.level}</div>
                 </div>
               </div>
 
@@ -3757,18 +4027,18 @@ export default function App() {
             </div>
 
             <div className="p-4">
-              <div className="font-bold text-gray-800 text-lg">{selectedFriend.title}</div>
-              <div className="text-sm text-gray-600 leading-relaxed mt-1">{selectedFriend.bio}</div>
+              <div className={`font-bold text-lg ${appTheme.titleText}`}>{selectedFriend.title}</div>
+              <div className={`text-sm leading-relaxed mt-1 ${isMasterTheme ? 'text-amber-800/80' : 'text-gray-600'}`}>{selectedFriend.bio}</div>
 
               <div className="grid grid-cols-2 gap-2 mt-4">
-                <div className="bg-blue-50 border border-blue-100 rounded-2xl p-3">
-                  <div className="text-[10px] text-blue-500 font-bold">วิวัฒนาการ</div>
-                  <div className="font-bold text-gray-800 text-sm">{friendEvoInfo.name}</div>
+                <div className={`${isMasterTheme ? 'bg-amber-50 border-amber-100' : 'bg-blue-50 border-blue-100'} border rounded-2xl p-3`}>
+                  <div className={`text-[10px] font-bold ${isMasterTheme ? 'text-amber-600' : 'text-blue-500'}`}>วิวัฒนาการ</div>
+                  <div className={`font-bold text-sm ${appTheme.titleText}`}>{friendEvoInfo.name}</div>
                   <div className="text-[11px] text-gray-500">{friendEvoInfo.desc}</div>
                 </div>
-                <div className="bg-pink-50 border border-pink-100 rounded-2xl p-3">
-                  <div className="text-[10px] text-pink-500 font-bold">สาย/รูปแบบ</div>
-                  <div className="font-bold text-gray-800 text-sm">{friendPathInfo ? `${friendPathInfo.icon} ${friendPathInfo.name}` : selectedFriend.title}</div>
+                <div className={`${isMasterTheme ? 'bg-yellow-50 border-yellow-100' : 'bg-pink-50 border-pink-100'} border rounded-2xl p-3`}>
+                  <div className={`text-[10px] font-bold ${isMasterTheme ? 'text-yellow-700' : 'text-pink-500'}`}>สาย/รูปแบบ</div>
+                  <div className={`font-bold text-sm ${appTheme.titleText}`}>{friendPathInfo ? `${friendPathInfo.icon} ${friendPathInfo.name}` : selectedFriend.title}</div>
                   <div className="text-[11px] text-gray-500">{friendPhaseInfo.name}</div>
                 </div>
                 <div className="bg-yellow-50 border border-yellow-100 rounded-2xl p-3">
@@ -3782,18 +4052,18 @@ export default function App() {
               </div>
 
               {friendPathInfo && (
-                <div className="mt-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-3 border border-blue-100">
-                  <div className="text-[10px] text-blue-500 font-bold mb-1">จุดเด่นของสายนี้</div>
+                <div className={`mt-3 rounded-2xl p-3 border ${isMasterTheme ? 'bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-100' : 'bg-gradient-to-r from-blue-50 to-purple-50 border-blue-100'}`}>
+                  <div className={`text-[10px] font-bold mb-1 ${isMasterTheme ? 'text-amber-600' : 'text-blue-500'}`}>จุดเด่นของสายนี้</div>
                   <div className="text-xs text-gray-700 leading-relaxed">{friendPathInfo.strength}</div>
                 </div>
               )}
 
               {friendRank && (
-                <div className="mt-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl p-3 border border-purple-100">
+                <div className={`mt-3 rounded-2xl p-3 border ${isMasterTheme ? 'bg-gradient-to-r from-amber-50 to-orange-50 border-amber-100' : 'bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-100'}`}>
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-[10px] text-purple-500 font-bold">Trade Ranking</div>
-                      <div className="font-black text-gray-800 text-sm">Rank #{friendRank.rank}</div>
+                      <div className={`text-[10px] font-bold ${isMasterTheme ? 'text-amber-600' : 'text-purple-500'}`}>Trade Ranking</div>
+                      <div className={`font-black text-sm ${appTheme.titleText}`}>Rank #{friendRank.rank}</div>
                     </div>
                     <div className="text-right">
                       <div className={`font-black text-lg ${!friendPortfolioUnlocked ? 'text-gray-400' : friendRank.returnPct >= 0 ? 'text-green-600' : 'text-red-500'}`}>
@@ -3813,29 +4083,29 @@ export default function App() {
     }
 
     return (
-      <div className="pb-24 px-4 pt-4 bg-gradient-to-b from-pink-50 via-sky-50 to-white min-h-screen">
+      <div className={`pb-24 px-4 pt-4 min-h-screen ${isMasterTheme ? 'bg-gradient-to-b from-amber-50 via-yellow-50 to-white' : 'bg-gradient-to-b from-pink-50 via-sky-50 to-white'}`}>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <div className="font-bold text-xl text-gray-800">Friend</div>
-            <div className="text-xs text-gray-500">เยี่ยมบ้านเพื่อนและแข่ง Trade Ranking จาก Return</div>
+            <div className={`font-bold text-xl ${appTheme.titleText}`}>Friend</div>
+            <div className={`text-xs ${appTheme.mutedText}`}>เยี่ยมบ้านเพื่อนและแข่ง Trade Ranking จาก Return</div>
           </div>
-          <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center">
-            <Users size={22} className="text-pink-500"/>
+          <div className={`w-12 h-12 rounded-2xl shadow-sm flex items-center justify-center ${isMasterTheme ? 'bg-white/90 border border-amber-100' : 'bg-white'}`}>
+            <Users size={22} className={isMasterTheme ? 'text-amber-500' : 'text-pink-500'}/>
           </div>
         </div>
 
-        <div className="bg-white p-1 rounded-2xl shadow-sm border border-pink-100 mb-4 grid grid-cols-2 gap-1">
-          <button onClick={() => setFriendTab('friends')} className={`py-2 rounded-xl text-xs font-black transition ${friendTab === 'friends' ? 'bg-pink-500 text-white shadow' : 'text-gray-500'}`}>
+        <div className={`p-1 rounded-2xl shadow-sm mb-4 grid grid-cols-2 gap-1 ${isMasterTheme ? 'bg-white/90 border border-amber-100' : 'bg-white border border-pink-100'}`}>
+          <button onClick={() => setFriendTab('friends')} className={`py-2 rounded-xl text-xs font-black transition ${friendTab === 'friends' ? `${isMasterTheme ? 'bg-amber-500' : 'bg-pink-500'} text-white shadow` : isMasterTheme ? 'text-amber-700' : 'text-gray-500'}`}>
             บ้านเพื่อน
           </button>
-          <button onClick={() => setFriendTab('ranking')} className={`py-2 rounded-xl text-xs font-black transition ${friendTab === 'ranking' ? 'bg-purple-500 text-white shadow' : 'text-gray-500'}`}>
+          <button onClick={() => setFriendTab('ranking')} className={`py-2 rounded-xl text-xs font-black transition ${friendTab === 'ranking' ? `${isMasterTheme ? 'bg-amber-500' : 'bg-purple-500'} text-white shadow` : isMasterTheme ? 'text-amber-700' : 'text-gray-500'}`}>
             Trade Ranking
           </button>
         </div>
 
         {friendTab === 'ranking' ? (
           <div className="space-y-3">
-            <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-3xl p-4 text-white shadow-lg">
+            <div className={`${isMasterTheme ? 'bg-gradient-to-br from-amber-500 via-yellow-500 to-orange-500' : 'bg-gradient-to-br from-purple-500 to-indigo-600'} rounded-3xl p-4 text-white shadow-lg`}>
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-xs opacity-80">Season 1</div>
@@ -3861,7 +4131,11 @@ export default function App() {
                 <button
                   key={entry.id}
                   onClick={() => friend && visitFriend(friend)}
-                  className={`w-full rounded-3xl p-3 shadow-sm text-left transition border active:scale-[0.99] ${entry.isPlayer ? 'bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200' : 'bg-white border-gray-100'}`}
+                  className={`w-full rounded-3xl p-3 shadow-sm text-left transition border active:scale-[0.99] ${
+                    entry.isPlayer
+                      ? (isMasterTheme ? 'bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-200' : 'bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200')
+                      : (isMasterTheme ? 'bg-white/90 border-amber-100' : 'bg-white border-gray-100')
+                  }`}
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-12 text-center font-black text-lg shrink-0">{rankBadge}</div>
@@ -3880,7 +4154,7 @@ export default function App() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
                         <div className="font-black text-gray-800 truncate">{entry.name}</div>
-                        {entry.isPlayer && <span className="text-[9px] bg-blue-500 text-white px-1.5 py-0.5 rounded-full font-bold">YOU</span>}
+                        {entry.isPlayer && <span className={`text-[9px] text-white px-1.5 py-0.5 rounded-full font-bold ${isMasterTheme ? 'bg-amber-500' : 'bg-blue-500'}`}>YOU</span>}
                         <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full font-bold">Lv.{entry.level}</span>
                       </div>
                       <div className="text-[11px] text-gray-500 truncate">
@@ -3909,9 +4183,9 @@ export default function App() {
           </div>
         ) : (
           <>
-            <div className="bg-white rounded-2xl p-4 shadow-sm mb-4 border border-pink-100">
-              <div className="font-bold text-gray-800 text-sm mb-1">{isCloudFriendMode ? 'Cloud Friend Mode' : 'Prototype Mode'}</div>
-              <div className="text-xs text-gray-500 leading-relaxed">
+            <div className={`rounded-2xl p-4 shadow-sm mb-4 ${isMasterTheme ? 'bg-white/90 border border-amber-100' : 'bg-white border border-pink-100'}`}>
+              <div className={`font-bold text-sm mb-1 ${appTheme.titleText}`}>{isCloudFriendMode ? 'Cloud Friend Mode' : 'Prototype Mode'}</div>
+              <div className={`text-xs leading-relaxed ${appTheme.mutedText}`}>
                 {isCloudFriendMode
                   ? 'เพิ่มเพื่อนจริงด้วย Friend ID แล้วเยี่ยมบ้านเพื่อดูมาสคอต Level และสายการลงทุนของเพื่อน'
                   : 'ตอนนี้เป็นเพื่อนจำลอง 4 คน เพื่อทดสอบ flow รายชื่อเพื่อน → เยี่ยมบ้าน → ดูมาสคอต/Level/สายของเพื่อน'}
@@ -3919,18 +4193,18 @@ export default function App() {
             </div>
 
             {isCloudFriendMode && (
-              <div className="bg-white rounded-3xl p-4 shadow-sm mb-4 border border-blue-100">
+              <div className={`rounded-3xl p-4 shadow-sm mb-4 ${isMasterTheme ? 'bg-white/90 border border-amber-100' : 'bg-white border border-blue-100'}`}>
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="font-black text-gray-800 text-sm">เพิ่มเพื่อนด้วย Friend ID</div>
+                    <div className={`font-black text-sm ${appTheme.titleText}`}>เพิ่มเพื่อนด้วย Friend ID</div>
                     <div className="text-[11px] text-gray-500 mt-0.5">
-                      ID ของคุณ: <span className="font-black text-blue-600">{cloudProfile?.friend_code ?? 'กำลังโหลด...'}</span>
+                      ID ของคุณ: <span className={`font-black ${isMasterTheme ? 'text-amber-600' : 'text-blue-600'}`}>{cloudProfile?.friend_code ?? 'กำลังโหลด...'}</span>
                     </div>
                   </div>
                   <button
                     onClick={refreshCloudFriends}
                     disabled={friendLoading}
-                    className="text-[10px] font-bold text-blue-500 bg-blue-50 px-3 py-1.5 rounded-full disabled:opacity-50"
+                    className={`text-[10px] font-bold px-3 py-1.5 rounded-full disabled:opacity-50 ${isMasterTheme ? 'text-amber-600 bg-amber-50' : 'text-blue-500 bg-blue-50'}`}
                   >
                     รีเฟรช
                   </button>
@@ -3949,14 +4223,14 @@ export default function App() {
                       setFriendCodeInput('');
                     }}
                     disabled={friendLoading || !friendCodeInput.trim()}
-                    className="bg-pink-500 text-white rounded-2xl px-4 py-2 text-xs font-black shadow disabled:opacity-40"
+                    className={`${isMasterTheme ? 'bg-amber-500' : 'bg-pink-500'} text-white rounded-2xl px-4 py-2 text-xs font-black shadow disabled:opacity-40`}
                   >
                     ส่งคำขอ
                   </button>
                 </div>
 
                 {friendMessage && (
-                  <div className="mt-3 text-[11px] font-bold text-blue-600 bg-blue-50 rounded-2xl px-3 py-2">
+                  <div className={`mt-3 text-[11px] font-bold rounded-2xl px-3 py-2 ${isMasterTheme ? 'text-amber-700 bg-amber-50' : 'text-blue-600 bg-blue-50'}`}>
                     {friendMessage}
                   </div>
                 )}
@@ -4005,7 +4279,7 @@ export default function App() {
 
             <div className="space-y-3">
               {activeFriends.length === 0 && (
-                <div className="bg-white border border-dashed border-pink-200 rounded-3xl p-6 text-center">
+                <div className={`border border-dashed rounded-3xl p-6 text-center ${isMasterTheme ? 'bg-white/90 border-amber-200' : 'bg-white border-pink-200'}`}>
                   <div className="text-3xl mb-2">🌱</div>
                   <div className="font-black text-gray-800">ยังไม่มีเพื่อนใน Cloud</div>
                   <div className="text-xs text-gray-500 mt-1">เอา Friend ID ของเพื่อนมาใส่ด้านบน หรือให้เพื่อนส่งคำขอมาหาคุณ</div>
@@ -4022,7 +4296,7 @@ export default function App() {
 
                 return (
                   <button key={friend.id} onClick={() => visitFriend(friend)}
-                    className="w-full bg-white rounded-3xl p-3 shadow-sm text-left active:scale-[0.99] transition border border-gray-100">
+                    className={`w-full rounded-3xl p-3 shadow-sm text-left active:scale-[0.99] transition border ${isMasterTheme ? 'bg-white/90 border-amber-100' : 'bg-white border-gray-100'}`}>
                     <div className="flex items-center gap-3">
                       <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-sky-50 to-pink-50 flex items-center justify-center border border-blue-100 overflow-hidden shrink-0">
                         <BuaMascot
@@ -4036,14 +4310,14 @@ export default function App() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <div className="font-black text-gray-800">{friend.name}</div>
-                          <div className="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-bold">Lv.{friend.level}</div>
-                          {friendRank && <div className="text-[10px] bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full font-bold">Rank #{friendRank.rank}</div>}
+                          <div className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isMasterTheme ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-600'}`}>Lv.{friend.level}</div>
+                          {friendRank && <div className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isMasterTheme ? 'bg-yellow-100 text-yellow-700' : 'bg-purple-100 text-purple-600'}`}>Rank #{friendRank.rank}</div>}
                         </div>
                         <div className="text-xs font-bold text-gray-700">{friend.title}</div>
                         <div className="text-[11px] text-gray-500 mt-0.5 line-clamp-2">
                           {friendEvoInfo.name}{friendPathInfo ? ` • ${friendPathInfo.icon} ${friendPathInfo.name}` : ''} • {friendPortfolioUnlocked ? `Return ${friend.trading.returnPct >= 0 ? '+' : ''}${fmt(friend.trading.returnPct)}%` : 'ยังไม่เปิด Portfolio'}
                         </div>
-                        <div className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-pink-500">
+                        <div className={`mt-2 inline-flex items-center gap-1 text-[11px] font-bold ${isMasterTheme ? 'text-amber-600' : 'text-pink-500'}`}>
                           เยี่ยมบ้าน <ChevronRight size={12}/>
                         </div>
                       </div>
@@ -4157,8 +4431,8 @@ export default function App() {
     const selectedAvgCostThb = selectedHolding ? getHoldingAvgCostThb(selectedHolding, selected) : 0;
 
     return (
-      <div className="absolute inset-0 bg-black/40 z-50 flex items-end" onClick={() => setSelected(null)}>
-        <div className="bg-white rounded-t-3xl w-full p-5" onClick={e => e.stopPropagation()}>
+      <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center" onClick={() => setSelected(null)}>
+        <div className="bg-white rounded-t-3xl w-full max-w-md p-5 max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-xl">{selected.logo}</div>
@@ -4213,7 +4487,7 @@ export default function App() {
 
   // NAV
   const NavItem = ({ id, icon: Icon, label }: any) => (
-    <button onClick={() => setScreen(id)} className={`flex-1 flex flex-col items-center gap-0.5 py-2 transition ${screen === id ? 'text-blue-500' : 'text-gray-400'}`}>
+    <button onClick={() => setScreen(id)} className={`flex-1 flex flex-col items-center gap-0.5 py-2 transition ${screen === id ? appTheme.activeText : 'text-gray-400'}`}>
       <Icon size={20} fill={screen === id ? 'currentColor' : 'none'} strokeWidth={screen === id ? 2.5 : 2}/>
       <span className={`text-[10px] ${screen === id ? 'font-bold' : 'font-medium'}`}>{label}</span>
     </button>
@@ -4256,8 +4530,8 @@ export default function App() {
   }
 
   return (
-    <div className="bg-gradient-to-br from-sky-100 via-blue-50 to-pink-50 min-h-screen flex items-center justify-center p-0 sm:p-4">
-      <div className="bg-white w-full max-w-md min-h-screen sm:min-h-0 sm:h-[820px] sm:rounded-3xl shadow-2xl overflow-hidden relative">
+    <div className={`${appTheme.shellBg} min-h-screen flex items-center justify-center p-0 sm:p-4`}>
+      <div className={`w-full max-w-md min-h-screen sm:min-h-0 sm:h-[820px] sm:rounded-3xl shadow-2xl overflow-hidden relative ${isMasterTheme ? 'bg-amber-50' : 'bg-white'}`}>
         <div className="h-full overflow-y-auto">
           {screen === 'home'    && <HomeScreen/>}
           {screen === 'lessons' && <LessonScreen/>}
@@ -4268,7 +4542,7 @@ export default function App() {
         </div>
 
         {/* Bottom Nav */}
-        <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex shadow-lg">
+        <div className={`absolute bottom-0 left-0 right-0 flex shadow-lg ${isMasterTheme ? 'bg-white/95 border-t border-amber-100' : 'bg-white border-t border-gray-100'}`}>
           <NavItem id="home"    icon={Home}     label="หน้าหลัก"/>
           <NavItem id="quests"  icon={BookOpen}  label="ภารกิจ"/>
           <NavItem id="invest"  icon={LineIcon}  label="Portfolio simulation"/>
@@ -4298,7 +4572,16 @@ export default function App() {
           <PortfolioTutorialModal onClose={() => { setShowPortfolioTutorial(false); setScreen('invest'); }}/>
         )}
 
-        {evolutionInfo && evolutionInfo.milestone === 'stage' && ['bua-saver', 'bua-investor'].includes(evolutionInfo.toStage) ? (
+        {evolutionInfo && evolutionInfo.milestone === 'investment-master' ? (
+          <InvestmentMasterEvolutionCutscene
+            cutscene={evolutionInfo}
+            onClose={() => setEvolutionInfo(null)}
+            imageOverride={mascotImageOverride}
+            imageScale={evolutionFxImageScale}
+            imageOffsetX={evolutionFxImageOffset.x}
+            imageOffsetY={evolutionFxImageOffset.y}
+          />
+        ) : evolutionInfo && evolutionInfo.milestone === 'stage' && ['bua-saver', 'bua-investor'].includes(evolutionInfo.toStage) ? (
           <SimpleStageEvolutionCutscene
             cutscene={evolutionInfo}
             onClose={() => setEvolutionInfo(null)}
