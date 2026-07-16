@@ -1547,7 +1547,7 @@ const InvestmentMasterEvolutionCutscene = ({
 
         <div className="absolute inset-0 z-30 bg-white pointer-events-none" style={{ animation: 'im-white-flash 4.4s ease-out forwards' }}/>
 
-        <div className="absolute top-[174px] left-1/2 -translate-x-1/2 z-40 w-[330px] h-[330px] flex items-center justify-center">
+        <div className="absolute top-[158px] left-1/2 -translate-x-1/2 z-40 w-[330px] h-[330px] flex items-center justify-center">
           <div style={{ animation: 'im-master-reveal 4.4s ease-out forwards' }}>
             <BuaMascot
               size={250}
@@ -2823,7 +2823,7 @@ export default function App() {
       ? 'bg-gradient-to-r from-amber-400 via-yellow-500 to-orange-500'
       : 'bg-gradient-to-r from-blue-500 to-blue-600';
     return (
-      <div className={`pb-24 ${isMasterHome ? 'min-h-screen bg-gradient-to-b from-amber-50 via-yellow-50 to-orange-50 relative overflow-hidden' : ''}`}>
+      <div className={`pb-36 ${isMasterHome ? 'min-h-screen bg-gradient-to-b from-amber-50 via-yellow-50 to-orange-50 relative overflow-hidden' : ''}`}>
         {isMasterHome && (
           <>
             <div className="pointer-events-none absolute -top-24 -right-20 w-72 h-72 rounded-full bg-yellow-200/45 blur-3xl"/>
@@ -4542,7 +4542,7 @@ export default function App() {
         </div>
 
         {/* Bottom Nav */}
-        <div className={`absolute bottom-0 left-0 right-0 flex shadow-lg ${isMasterTheme ? 'bg-white/95 border-t border-amber-100' : 'bg-white border-t border-gray-100'}`}>
+        <div className={`absolute bottom-0 left-0 right-0 z-40 flex shadow-lg ${isMasterTheme ? 'bg-white/95 border-t border-amber-100' : 'bg-white border-t border-gray-100'}`}>
           <NavItem id="home"    icon={Home}     label="หน้าหลัก"/>
           <NavItem id="quests"  icon={BookOpen}  label="ภารกิจ"/>
           <NavItem id="invest"  icon={LineIcon}  label="Portfolio simulation"/>
