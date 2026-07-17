@@ -2950,7 +2950,17 @@ export default function App() {
             )}
             <div className={`absolute ${evoStage === 'bua-saver' && !mascotImageOverride ? '-bottom-4' : evoStage === 'bua-investor' && !mascotImageOverride ? '-bottom-2' : 'bottom-2'} left-1/2 -translate-x-1/2 z-10`}
               style={{ background: 'transparent', animation: 'float 3s ease-in-out infinite' }}>
-              <BuaMascot size={140} mood={mood} stage={mascotStage} evolutionStage={evoStage} investmentPath={player.selectedInvestmentPath} imageOverride={mascotImageOverride} imageScale={mascotImageScale} imageOffsetX={mascotImageOffset.x} imageOffsetY={mascotImageOffset.y}/>
+              <BuaMascot
+                size={140}
+                mood={mood}
+                stage={mascotStage}
+                evolutionStage={evoStage}
+                investmentPath={player.selectedInvestmentPath}
+                imageOverride={mascotImageOverride}
+                imageScale={isMasterHome ? 0.82 : mascotImageScale}
+                imageOffsetX={mascotImageOffset.x}
+                imageOffsetY={mascotImageOffset.y}
+              />
             </div>
             <div className="absolute right-2 top-3 flex flex-col gap-1.5 z-20">
               <button onClick={claimCheckin} className={`rounded-2xl w-11 h-11 shadow-lg flex flex-col items-center justify-center relative active:scale-95 transition ${isMasterHome ? 'bg-white/90 border border-amber-100' : 'bg-white'}`}>
@@ -3493,10 +3503,10 @@ export default function App() {
         return <button onClick={() => setModal('shop')} className="bg-orange-500 text-white text-xs font-bold px-3 py-2 rounded-full active:scale-95">ทำเลย</button>;
       }
       if (q.type === 'trade') {
-        return <button onClick={() => setScreen('invest')} className="bg-purple-500 text-white text-xs font-bold px-3 py-2 rounded-full active:scale-95">ไปเทรด</button>;
+        return <button onClick={() => setScreen('invest')} className="bg-blue-500 text-white text-xs font-bold px-3 py-2 rounded-full active:scale-95">ไปเทรด</button>;
       }
       if (q.type === 'friend') {
-        return <button onClick={() => setScreen('friends')} className="bg-pink-500 text-white text-xs font-bold px-3 py-2 rounded-full active:scale-95">ไปเยี่ยม</button>;
+        return <button onClick={() => setScreen('friends')} className="bg-blue-500 text-white text-xs font-bold px-3 py-2 rounded-full active:scale-95">ไปเยี่ยม</button>;
       }
       if (q.type === 'lesson' && !q.lesson) {
         return <button onClick={() => setScreen('lessons')} className={`${isMasterTheme ? 'bg-amber-500' : 'bg-blue-500'} text-white text-xs font-bold px-3 py-2 rounded-full active:scale-95`}>ไปเรียน</button>;
@@ -3575,7 +3585,7 @@ export default function App() {
   const InvestScreen = () => {
     if (!portfolioUnlocked) {
       return (
-        <div className={`pb-24 min-h-screen px-4 pt-8 ${isMasterTheme ? 'bg-gradient-to-b from-amber-50 via-yellow-50 to-white' : 'bg-gradient-to-b from-purple-50 to-white'}`}>
+        <div className={`pb-24 min-h-screen px-4 pt-8 ${isMasterTheme ? 'bg-gradient-to-b from-amber-50 via-yellow-50 to-white' : 'bg-gradient-to-b from-blue-50 to-white'}`}>
           <div className="text-center mb-6">
             <div className="text-6xl mb-3">🔒</div>
             <div className={`font-bold text-xl mb-2 ${appTheme.titleText}`}>พอร์ตจำลอง</div>
@@ -3609,8 +3619,8 @@ export default function App() {
       minute: '2-digit',
     });
     return (
-      <div className={`pb-24 min-h-screen ${isMasterTheme ? 'bg-gradient-to-b from-amber-50 via-yellow-50 to-orange-50' : 'bg-gray-50'}`}>
-        <div className={`${isMasterTheme ? 'bg-gradient-to-br from-amber-500 via-yellow-500 to-orange-500' : 'bg-gradient-to-br from-purple-500 to-purple-600'} px-4 pt-5 pb-4 text-white`}>
+      <div className={`pb-24 min-h-screen ${isMasterTheme ? 'bg-gradient-to-b from-amber-50 via-yellow-50 to-orange-50' : 'bg-sky-50'}`}>
+        <div className={`${isMasterTheme ? 'bg-gradient-to-br from-amber-500 via-yellow-500 to-orange-500' : 'bg-gradient-to-br from-blue-600 via-sky-600 to-cyan-600'} px-4 pt-5 pb-4 text-white`}>
           <div className="flex items-center justify-between mb-3">
             <div className="text-xl font-bold">ลงทุน</div>
             <div className="bg-white/20 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1">
@@ -3652,7 +3662,7 @@ export default function App() {
         </div>
         <div className={`flex ${isMasterTheme ? 'bg-white/90 border-b border-amber-100' : 'bg-white border-b'}`}>
           {(['market','portfolio','history'] as const).map(t => (
-            <button key={t} onClick={() => setInvestTab(t)} className={`flex-1 py-3 text-sm font-bold transition ${investTab === t ? `${isMasterTheme ? 'text-amber-600 border-amber-500' : 'text-purple-600 border-purple-600'} border-b-2` : 'text-gray-400'}`}>
+            <button key={t} onClick={() => setInvestTab(t)} className={`flex-1 py-3 text-sm font-bold transition ${investTab === t ? `${isMasterTheme ? 'text-amber-600 border-amber-500' : 'text-blue-600 border-blue-500'} border-b-2` : 'text-gray-400'}`}>
               {t === 'market' ? 'ตลาด' : t === 'portfolio' ? 'พอร์ตของฉัน' : 'ประวัติ'}
             </button>
           ))}
@@ -3664,7 +3674,7 @@ export default function App() {
                 <button
                   key={f.id}
                   onClick={() => setCat(f.id)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap ${cat === f.id ? `${isMasterTheme ? 'bg-amber-500' : 'bg-purple-600'} text-white` : isMasterTheme ? 'bg-white/85 text-amber-700 border border-amber-100' : 'bg-white text-gray-600 border'}`}
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap ${cat === f.id ? `${isMasterTheme ? 'bg-amber-500' : 'bg-blue-600'} text-white` : isMasterTheme ? 'bg-white/85 text-amber-700 border border-amber-100' : 'bg-white text-gray-600 border border-blue-100'}`}
                 >
                   {f.label}
                 </button>
@@ -3684,7 +3694,7 @@ export default function App() {
                         <span className="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">{s.assetType}</span>
                         <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${ASSET_RISK_BADGE[s.risk]}`}>{s.risk}</span>
                       </div>
-                      {pathMatch && <div className="text-[9px] text-purple-600 font-bold mt-0.5">เหมาะกับสายของฉัน</div>}
+                      {pathMatch && <div className="text-[9px] text-blue-600 font-bold mt-0.5">เหมาะกับสายของฉัน</div>}
                     </div>
                     <div className="flex-1 h-9">
                       <ResponsiveContainer><LineChart data={s.spark}><YAxis domain={['dataMin','dataMax']} hide/><Line type="monotone" dataKey="v" stroke={up ? '#10B981' : '#EF4444'} strokeWidth={1.5} dot={false}/></LineChart></ResponsiveContainer>
@@ -3987,7 +3997,7 @@ export default function App() {
       const friendPortfolioUnlocked = Boolean(friendRank?.portfolioUnlocked);
 
       return (
-        <div className={`pb-24 px-4 pt-4 min-h-screen ${isMasterTheme ? 'bg-gradient-to-b from-amber-50 via-yellow-50 to-white' : 'bg-gradient-to-b from-pink-50 via-sky-50 to-white'}`}>
+        <div className={`pb-24 px-4 pt-4 min-h-screen ${isMasterTheme ? 'bg-gradient-to-b from-amber-50 via-yellow-50 to-white' : 'bg-gradient-to-b from-blue-50 via-sky-50 to-white'}`}>
           <button onClick={() => setSelectedFriend(null)} className={`text-xs font-bold flex items-center gap-1 mb-3 ${isMasterTheme ? 'text-amber-600' : 'text-blue-500'}`}>
             ← กลับไปหน้ารายชื่อเพื่อน
           </button>
@@ -4036,8 +4046,8 @@ export default function App() {
                   <div className={`font-bold text-sm ${appTheme.titleText}`}>{friendEvoInfo.name}</div>
                   <div className="text-[11px] text-gray-500">{friendEvoInfo.desc}</div>
                 </div>
-                <div className={`${isMasterTheme ? 'bg-yellow-50 border-yellow-100' : 'bg-pink-50 border-pink-100'} border rounded-2xl p-3`}>
-                  <div className={`text-[10px] font-bold ${isMasterTheme ? 'text-yellow-700' : 'text-pink-500'}`}>สาย/รูปแบบ</div>
+                <div className={`${isMasterTheme ? 'bg-yellow-50 border-yellow-100' : 'bg-sky-50 border-sky-100'} border rounded-2xl p-3`}>
+                  <div className={`text-[10px] font-bold ${isMasterTheme ? 'text-yellow-700' : 'text-sky-600'}`}>สาย/รูปแบบ</div>
                   <div className={`font-bold text-sm ${appTheme.titleText}`}>{friendPathInfo ? `${friendPathInfo.icon} ${friendPathInfo.name}` : selectedFriend.title}</div>
                   <div className="text-[11px] text-gray-500">{friendPhaseInfo.name}</div>
                 </div>
@@ -4052,17 +4062,17 @@ export default function App() {
               </div>
 
               {friendPathInfo && (
-                <div className={`mt-3 rounded-2xl p-3 border ${isMasterTheme ? 'bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-100' : 'bg-gradient-to-r from-blue-50 to-purple-50 border-blue-100'}`}>
+                <div className={`mt-3 rounded-2xl p-3 border ${isMasterTheme ? 'bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-100' : 'bg-gradient-to-r from-blue-50 to-sky-50 border-blue-100'}`}>
                   <div className={`text-[10px] font-bold mb-1 ${isMasterTheme ? 'text-amber-600' : 'text-blue-500'}`}>จุดเด่นของสายนี้</div>
                   <div className="text-xs text-gray-700 leading-relaxed">{friendPathInfo.strength}</div>
                 </div>
               )}
 
               {friendRank && (
-                <div className={`mt-3 rounded-2xl p-3 border ${isMasterTheme ? 'bg-gradient-to-r from-amber-50 to-orange-50 border-amber-100' : 'bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-100'}`}>
+                <div className={`mt-3 rounded-2xl p-3 border ${isMasterTheme ? 'bg-gradient-to-r from-amber-50 to-orange-50 border-amber-100' : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100'}`}>
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className={`text-[10px] font-bold ${isMasterTheme ? 'text-amber-600' : 'text-purple-500'}`}>Trade Ranking</div>
+                      <div className={`text-[10px] font-bold ${isMasterTheme ? 'text-amber-600' : 'text-blue-600'}`}>Trade Ranking</div>
                       <div className={`font-black text-sm ${appTheme.titleText}`}>Rank #{friendRank.rank}</div>
                     </div>
                     <div className="text-right">
@@ -4083,29 +4093,29 @@ export default function App() {
     }
 
     return (
-      <div className={`pb-24 px-4 pt-4 min-h-screen ${isMasterTheme ? 'bg-gradient-to-b from-amber-50 via-yellow-50 to-white' : 'bg-gradient-to-b from-pink-50 via-sky-50 to-white'}`}>
+      <div className={`pb-24 px-4 pt-4 min-h-screen ${isMasterTheme ? 'bg-gradient-to-b from-amber-50 via-yellow-50 to-white' : 'bg-gradient-to-b from-blue-50 via-sky-50 to-white'}`}>
         <div className="flex items-center justify-between mb-4">
           <div>
             <div className={`font-bold text-xl ${appTheme.titleText}`}>Friend</div>
             <div className={`text-xs ${appTheme.mutedText}`}>เยี่ยมบ้านเพื่อนและแข่ง Trade Ranking จาก Return</div>
           </div>
           <div className={`w-12 h-12 rounded-2xl shadow-sm flex items-center justify-center ${isMasterTheme ? 'bg-white/90 border border-amber-100' : 'bg-white'}`}>
-            <Users size={22} className={isMasterTheme ? 'text-amber-500' : 'text-pink-500'}/>
+            <Users size={22} className={isMasterTheme ? 'text-amber-500' : 'text-blue-500'}/>
           </div>
         </div>
 
-        <div className={`p-1 rounded-2xl shadow-sm mb-4 grid grid-cols-2 gap-1 ${isMasterTheme ? 'bg-white/90 border border-amber-100' : 'bg-white border border-pink-100'}`}>
-          <button onClick={() => setFriendTab('friends')} className={`py-2 rounded-xl text-xs font-black transition ${friendTab === 'friends' ? `${isMasterTheme ? 'bg-amber-500' : 'bg-pink-500'} text-white shadow` : isMasterTheme ? 'text-amber-700' : 'text-gray-500'}`}>
+        <div className={`p-1 rounded-2xl shadow-sm mb-4 grid grid-cols-2 gap-1 ${isMasterTheme ? 'bg-white/90 border border-amber-100' : 'bg-white border border-blue-100'}`}>
+          <button onClick={() => setFriendTab('friends')} className={`py-2 rounded-xl text-xs font-black transition ${friendTab === 'friends' ? `${isMasterTheme ? 'bg-amber-500' : 'bg-blue-500'} text-white shadow` : isMasterTheme ? 'text-amber-700' : 'text-gray-500'}`}>
             บ้านเพื่อน
           </button>
-          <button onClick={() => setFriendTab('ranking')} className={`py-2 rounded-xl text-xs font-black transition ${friendTab === 'ranking' ? `${isMasterTheme ? 'bg-amber-500' : 'bg-purple-500'} text-white shadow` : isMasterTheme ? 'text-amber-700' : 'text-gray-500'}`}>
+          <button onClick={() => setFriendTab('ranking')} className={`py-2 rounded-xl text-xs font-black transition ${friendTab === 'ranking' ? `${isMasterTheme ? 'bg-amber-500' : 'bg-blue-600'} text-white shadow` : isMasterTheme ? 'text-amber-700' : 'text-gray-500'}`}>
             Trade Ranking
           </button>
         </div>
 
         {friendTab === 'ranking' ? (
           <div className="space-y-3">
-            <div className={`${isMasterTheme ? 'bg-gradient-to-br from-amber-500 via-yellow-500 to-orange-500' : 'bg-gradient-to-br from-purple-500 to-indigo-600'} rounded-3xl p-4 text-white shadow-lg`}>
+            <div className={`${isMasterTheme ? 'bg-gradient-to-br from-amber-500 via-yellow-500 to-orange-500' : 'bg-gradient-to-br from-blue-600 via-sky-600 to-indigo-600'} rounded-3xl p-4 text-white shadow-lg`}>
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-xs opacity-80">Season 1</div>
@@ -4133,13 +4143,13 @@ export default function App() {
                   onClick={() => friend && visitFriend(friend)}
                   className={`w-full rounded-3xl p-3 shadow-sm text-left transition border active:scale-[0.99] ${
                     entry.isPlayer
-                      ? (isMasterTheme ? 'bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-200' : 'bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200')
+                      ? (isMasterTheme ? 'bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-200' : 'bg-gradient-to-r from-blue-50 to-sky-50 border-blue-200')
                       : (isMasterTheme ? 'bg-white/90 border-amber-100' : 'bg-white border-gray-100')
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-12 text-center font-black text-lg shrink-0">{rankBadge}</div>
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-50 to-pink-50 border border-blue-100 flex items-center justify-center overflow-hidden shrink-0">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-50 to-blue-50 border border-blue-100 flex items-center justify-center overflow-hidden shrink-0">
                       <BuaMascot
                         size={52}
                         mood="happy"
@@ -4183,7 +4193,7 @@ export default function App() {
           </div>
         ) : (
           <>
-            <div className={`rounded-2xl p-4 shadow-sm mb-4 ${isMasterTheme ? 'bg-white/90 border border-amber-100' : 'bg-white border border-pink-100'}`}>
+            <div className={`rounded-2xl p-4 shadow-sm mb-4 ${isMasterTheme ? 'bg-white/90 border border-amber-100' : 'bg-white border border-blue-100'}`}>
               <div className={`font-bold text-sm mb-1 ${appTheme.titleText}`}>{isCloudFriendMode ? 'Cloud Friend Mode' : 'Prototype Mode'}</div>
               <div className={`text-xs leading-relaxed ${appTheme.mutedText}`}>
                 {isCloudFriendMode
@@ -4223,7 +4233,7 @@ export default function App() {
                       setFriendCodeInput('');
                     }}
                     disabled={friendLoading || !friendCodeInput.trim()}
-                    className={`${isMasterTheme ? 'bg-amber-500' : 'bg-pink-500'} text-white rounded-2xl px-4 py-2 text-xs font-black shadow disabled:opacity-40`}
+                    className={`${isMasterTheme ? 'bg-amber-500' : 'bg-blue-500'} text-white rounded-2xl px-4 py-2 text-xs font-black shadow disabled:opacity-40`}
                   >
                     ส่งคำขอ
                   </button>
@@ -4240,7 +4250,7 @@ export default function App() {
                     <div className="text-[11px] font-black text-gray-700 mb-2">คำขอเป็นเพื่อน</div>
                     <div className="space-y-2">
                       {incomingFriendRequests.map(request => (
-                        <div key={request.id} className="bg-pink-50 border border-pink-100 rounded-2xl p-3 flex items-center gap-3">
+                        <div key={request.id} className="bg-blue-50 border border-blue-100 rounded-2xl p-3 flex items-center gap-3">
                           <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center overflow-hidden shrink-0">
                             <BuaMascot
                               size={38}
@@ -4279,7 +4289,7 @@ export default function App() {
 
             <div className="space-y-3">
               {activeFriends.length === 0 && (
-                <div className={`border border-dashed rounded-3xl p-6 text-center ${isMasterTheme ? 'bg-white/90 border-amber-200' : 'bg-white border-pink-200'}`}>
+                <div className={`border border-dashed rounded-3xl p-6 text-center ${isMasterTheme ? 'bg-white/90 border-amber-200' : 'bg-white border-blue-200'}`}>
                   <div className="text-3xl mb-2">🌱</div>
                   <div className="font-black text-gray-800">ยังไม่มีเพื่อนใน Cloud</div>
                   <div className="text-xs text-gray-500 mt-1">เอา Friend ID ของเพื่อนมาใส่ด้านบน หรือให้เพื่อนส่งคำขอมาหาคุณ</div>
@@ -4298,7 +4308,7 @@ export default function App() {
                   <button key={friend.id} onClick={() => visitFriend(friend)}
                     className={`w-full rounded-3xl p-3 shadow-sm text-left active:scale-[0.99] transition border ${isMasterTheme ? 'bg-white/90 border-amber-100' : 'bg-white border-gray-100'}`}>
                     <div className="flex items-center gap-3">
-                      <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-sky-50 to-pink-50 flex items-center justify-center border border-blue-100 overflow-hidden shrink-0">
+                      <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-sky-50 to-blue-50 flex items-center justify-center border border-blue-100 overflow-hidden shrink-0">
                         <BuaMascot
                           size={74}
                           mood="happy"
@@ -4311,13 +4321,13 @@ export default function App() {
                         <div className="flex items-center gap-2 mb-1">
                           <div className="font-black text-gray-800">{friend.name}</div>
                           <div className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isMasterTheme ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-600'}`}>Lv.{friend.level}</div>
-                          {friendRank && <div className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isMasterTheme ? 'bg-yellow-100 text-yellow-700' : 'bg-purple-100 text-purple-600'}`}>Rank #{friendRank.rank}</div>}
+                          {friendRank && <div className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isMasterTheme ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-100 text-blue-600'}`}>Rank #{friendRank.rank}</div>}
                         </div>
                         <div className="text-xs font-bold text-gray-700">{friend.title}</div>
                         <div className="text-[11px] text-gray-500 mt-0.5 line-clamp-2">
                           {friendEvoInfo.name}{friendPathInfo ? ` • ${friendPathInfo.icon} ${friendPathInfo.name}` : ''} • {friendPortfolioUnlocked ? `Return ${friend.trading.returnPct >= 0 ? '+' : ''}${fmt(friend.trading.returnPct)}%` : 'ยังไม่เปิด Portfolio'}
                         </div>
-                        <div className={`mt-2 inline-flex items-center gap-1 text-[11px] font-bold ${isMasterTheme ? 'text-amber-600' : 'text-pink-500'}`}>
+                        <div className={`mt-2 inline-flex items-center gap-1 text-[11px] font-bold ${isMasterTheme ? 'text-amber-600' : 'text-blue-500'}`}>
                           เยี่ยมบ้าน <ChevronRight size={12}/>
                         </div>
                       </div>
@@ -4450,7 +4460,7 @@ export default function App() {
           <div className="bg-gray-50 rounded-2xl p-3 mb-4">
             <div className="text-2xl font-bold text-gray-800">{fmt(selected.price)} <span className="text-xs text-gray-400">{selected.currency}</span></div>
             {selected.currency === 'USD' && (
-              <div className="text-xs font-bold text-purple-600">
+              <div className="text-xs font-bold text-blue-600">
                 คิดซื้อขายเป็นเงินบาท ≈ ฿{fmt(selectedThbPrice)} / หน่วย
               </div>
             )}
@@ -4459,7 +4469,7 @@ export default function App() {
             <div className="h-24 mt-1"><ResponsiveContainer><LineChart data={selected.spark}><YAxis domain={['dataMin','dataMax']} hide/><Line type="monotone" dataKey="v" stroke={selected.changePct >= 0 ? '#10B981' : '#EF4444'} strokeWidth={2} dot={false}/></LineChart></ResponsiveContainer></div>
           </div>
           {selectedHolding ? (
-            <div className="bg-purple-50 rounded-xl p-2.5 mb-3 text-xs text-purple-700 flex justify-between">
+            <div className="bg-blue-50 rounded-xl p-2.5 mb-3 text-xs text-blue-700 flex justify-between">
               <span>ถืออยู่ {selectedHolding.shares} หน่วย</span>
               <span>ต้นทุน ฿{fmt(selectedAvgCostThb)}</span>
             </div>
