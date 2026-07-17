@@ -2957,7 +2957,7 @@ export default function App() {
                 evolutionStage={evoStage}
                 investmentPath={player.selectedInvestmentPath}
                 imageOverride={mascotImageOverride}
-                imageScale={isMasterHome ? 0.82 : mascotImageScale}
+                imageScale={isMasterHome ? 1 : mascotImageScale}
                 imageOffsetX={mascotImageOffset.x}
                 imageOffsetY={mascotImageOffset.y}
               />
